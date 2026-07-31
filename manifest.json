@@ -1,1 +1,21 @@
-
+{
+  "name": "Rempla'IDEL",
+  "short_name": "Rempla'IDEL",
+  "description": "Application de gestion des remplacements pour infirmières libérales.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDFCFF",
+  "theme_color": "#006A6A",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
