@@ -1,1 +1,79 @@
+:root {
+  /* Material Design 3 Tokens - Light Theme */
+  --md-primary: #006A6A;
+  --md-on-primary: #FFFFFF;
+  --md-primary-container: #6FF7F6;
+  --md-surface: #FDFCFF;
+  --md-surface-variant: #DAE5E4;
+  --md-on-surface: #191C1C;
+  --md-on-surface-variant: #3F4948;
+  --md-outline: #6F7978;
+  --md-error: #BA1A1A;
+  --md-success: #2E7D32;
+  --md-warning: #F9A825;
+  
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 28px;
+  
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 8px rgba(0,0,0,0.15);
+  
+  --transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
 
+[data-theme="dark"] {
+  --md-primary: #4FDADA;
+  --md-on-primary: #003737;
+  --md-primary-container: #004F50;
+  --md-surface: #191C1C;
+  --md-surface-variant: #3F4948;
+  --md-on-surface: #E1E3E2;
+  --md-on-surface-variant: #BEC9C7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Roboto', system-ui, sans-serif; background-color: var(--md-surface); color: var(--md-on-surface); transition: background var(--transition); }
+
+/* Layout */
+#app { display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 80px; }
+#main-content { flex: 1; padding: 16px; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+/* Bottom Navigation */
+#bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 70px;
+  background: var(--md-surface); border-top: 1px solid var(--md-surface-variant);
+  display: flex; justify-content: space-around; align-items: center; z-index: 1000;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+}
+.nav-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: var(--md-outline); text-decoration: none; font-size: 12px; gap: 4px;
+  width: 100%; height: 100%; transition: color var(--transition); background: none; border: none; cursor: pointer;
+}
+.nav-item.active { color: var(--md-primary); }
+.nav-item i { width: 24px; height: 24px; }
+
+/* Cards */
+.card { background: var(--md-surface-variant); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+
+/* Buttons */
+.btn { background: var(--md-primary); color: var(--md-on-primary); border: none; padding: 12px 24px; border-radius: var(--radius-lg); font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: transform var(--transition), box-shadow var(--transition); }
+.btn:active { transform: scale(0.98); box-shadow: var(--shadow-md); }
+.btn-outline { background: transparent; color: var(--md-primary); border: 1px solid var(--md-primary); }
+
+/* Form */
+.input-field { width: 100%; padding: 16px; border: 1px solid var(--md-outline); border-radius: var(--radius-sm); background: var(--md-surface); color: var(--md-on-surface); margin-bottom: 16px; font-size: 16px; }
+.input-field:focus { outline: none; border-color: var(--md-primary); border-width: 2px; }
+
+/* Snackbar */
+#snackbar { visibility: hidden; min-width: 250px; margin-left: -125px; background-color: var(--md-on-surface); color: var(--md-surface); text-align: center; border-radius: var(--radius-sm); padding: 16px; position: fixed; z-index: 2000; left: 50%; bottom: 90px; }
+#snackbar.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+@keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 90px; opacity: 1;} }
+@keyframes fadeout { from {bottom: 90px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+/* Modal */
+#modal-container { display: none; position: fixed; z-index: 1500; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+.modal-content { background-color: var(--md-surface); margin: 15vh auto; padding: 20px; border-radius: var(--radius-lg); width: 90%; max-width: 500px; animation: slideDown 0.3s ease-out; }
+@keyframes slideDown { from {transform: translateY(-50px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
