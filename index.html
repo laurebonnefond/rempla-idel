@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- React et Babel pour faire tourner le code sans installation -->
+    <!-- React et Babel -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -18,29 +18,39 @@
         body { 
             margin: 0; 
             font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; 
-            background: #F4F5F8; 
+            background: #FFFFFF; 
         }
-        /* Animation pour les fenêtres modales */
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #D0D4DC; border-radius: 4px; }
+        
+        /* Animations Premium */
+        @keyframes fadeInDown {
+            0% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        @keyframes slideUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUpModal { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <!-- L'endroit où l'application React va s'injecter -->
     <div id="root"></div>
 
     <script type="text/babel">
-        // ─── Adaptation des imports pour le navigateur ───
         const { useState, useEffect, useMemo, useCallback } = React;
 
-        // ─── Composants Icônes (Emojis) ───
-        // On remplace la bibliothèque externe par des emojis pour éviter les erreurs
+        // ─── Icônes (Emojis) ───
         const makeIcon = (emoji) => ({ size=18, color, style }) => <span style={{ fontSize: size, color, lineHeight: 1, display: 'inline-block', ...style }}>{emoji}</span>;
         const LayoutDashboard = makeIcon("📊");
-        const Building2 = makeIcon("🏢");
+        const Building2 = makeIcon("🏥");
         const CalendarDays = makeIcon("📅");
         const Euro = makeIcon("💶");
         const Car = makeIcon("🚗");
@@ -52,19 +62,17 @@
         const ChevronRight = makeIcon("➡️");
         const Edit = makeIcon("✏️");
         const Trash2 = makeIcon("🗑️");
-        const Clock = makeIcon("🕒");
+        const Clock = makeIcon("⏱️");
         const MapPin = makeIcon("📍");
         const Phone = makeIcon("📞");
         const Mail = makeIcon("✉️");
-        const AlertCircle = makeIcon("⚠️");
+        const AlertCircle = makeIcon("💳");
         const TrendingUp = makeIcon("📈");
         const FileText = makeIcon("📄");
-        const Search = makeIcon("🔍");
         const Save = makeIcon("💾");
         const Copy = makeIcon("📋");
-        const Eye = makeIcon("👁️");
 
-        // ─── localStorage hook ───
+        // ─── Hooks & Utils ───
         function useStore(key, init) {
           const [val, setVal] = useState(() => {
             try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : init; }
@@ -75,29 +83,25 @@
         }
          
         const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-         
-        const COLORS = [
-          "#2D9F93","#F0786A","#6C8EEF","#E8A838","#9B6DD7","#4CAF50","#FF7043","#5C6BC0",
-          "#26A69A","#EF5350","#AB47BC","#42A5F5"
-        ];
-         
+        const COLORS = ["#082B66","#1BC7C9","#F0786A","#E8A838","#9B6DD7","#4CAF50","#FF7043","#5C6BC0","#26A69A","#EF5350","#AB47BC","#42A5F5"];
         const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
         const DAYS_FR = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
         const STATUS_MAP = { pending:"En attente", invoiced:"Facturé", paid:"Payé", cancelled:"Annulé" };
          
-        // ─── Components de base (UI) ───
-         
-        function KpiCard({ icon: Icon, label, value, sub, color }) {
+        // ─── UI Components ───
+        function KpiCard({ icon: Icon, label, value, sub, color, delay }) {
           return (
             <div style={{
               background:"#fff", borderRadius:16, padding:"18px 16px", flex:"1 1 45%",
-              minWidth:140, boxShadow:"0 1px 4px rgba(0,0,0,.06)", borderLeft:`4px solid ${color||"#2D9F93"}`
+              minWidth:140, boxShadow:"0 4px 12px rgba(8, 43, 102, 0.05)", border:`1px solid #F0F2F5`,
+              opacity: 0, animation: `slideUp 0.5s ease-out ${delay}s forwards`,
+              display: 'flex', flexDirection: 'column', justifyContent: 'center'
             }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <Icon size={18} color={color||"#2D9F93"} />
-                <span style={{ fontSize:12, color:"#8B95A5", fontWeight:500 }}>{label}</span>
+                <Icon size={22} color={color||"#082B66"} />
+                <span style={{ fontSize:12, color:"#8B95A5", fontWeight:600 }}>{label}</span>
               </div>
-              <div style={{ fontSize:24, fontWeight:700, color:"#1A2332" }}>{value}</div>
+              <div style={{ fontSize:24, fontWeight:700, color:"#082B66" }}>{value}</div>
               {sub && <div style={{ fontSize:11, color:"#8B95A5", marginTop:2 }}>{sub}</div>}
             </div>
           );
@@ -107,8 +111,8 @@
           const base = {
             border:"none", borderRadius:12, padding:"10px 18px", fontWeight:600, fontSize:14,
             cursor: disabled ? "not-allowed" : "pointer", display:"inline-flex", alignItems:"center",
-            gap:6, transition:"all .15s", opacity: disabled ? .5 : 1,
-            ...(variant==="primary" ? { background:"#2D9F93", color:"#fff" } :
+            gap:6, transition:"all .2s", opacity: disabled ? .5 : 1,
+            ...(variant==="primary" ? { background:"#082B66", color:"#fff" } :
               variant==="danger" ? { background:"#FEE", color:"#EF5350" } :
               { background:"#F0F1F4", color:"#1A2332" }),
             ...style
@@ -118,11 +122,7 @@
          
         function Input({ label, value, onChange, type="text", placeholder, style={}, options, textarea }) {
           const id = label?.replace(/\s/g,"_");
-          const shared = {
-            width:"100%", padding:"10px 12px", borderRadius:10, border:"1.5px solid #E0E3EA",
-            fontSize:14, outline:"none", fontFamily:"inherit", background:"#FAFBFC",
-            transition:"border .15s", boxSizing:"border-box"
-          };
+          const shared = { width:"100%", padding:"10px 12px", borderRadius:10, border:"1.5px solid #E0E3EA", fontSize:14, outline:"none", fontFamily:"inherit", background:"#FAFBFC", transition:"border .15s", boxSizing:"border-box" };
           return (
             <div style={{ marginBottom:12, ...style }}>
               {label && <label htmlFor={id} style={{ fontSize:12, fontWeight:600, color:"#5A6578", display:"block", marginBottom:4 }}>{label}</label>}
@@ -133,8 +133,7 @@
               ) : textarea ? (
                 <textarea id={id} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={3} style={{...shared, resize:"vertical"}} />
               ) : (
-                <input id={id} type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={shared}
-                  onFocus={e=>{e.target.style.borderColor="#2D9F93"}} onBlur={e=>{e.target.style.borderColor="#E0E3EA"}} />
+                <input id={id} type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={shared} onFocus={e=>{e.target.style.borderColor="#1BC7C9"}} onBlur={e=>{e.target.style.borderColor="#E0E3EA"}} />
               )}
             </div>
           );
@@ -142,14 +141,11 @@
          
         function Modal({ title, onClose, children }) {
           return (
-            <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.4)", zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
+            <div style={{ position:"fixed", inset:0, background:"rgba(8, 43, 102, 0.4)", zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
               onClick={e => { if(e.target === e.currentTarget) onClose(); }}>
-              <div style={{
-                background:"#fff", borderRadius:"20px 20px 0 0", width:"100%", maxWidth:500,
-                maxHeight:"90vh", overflow:"auto", padding:"20px 20px 32px", animation:"slideUp .25s ease"
-              }}>
+              <div style={{ background:"#fff", borderRadius:"20px 20px 0 0", width:"100%", maxWidth:500, maxHeight:"90vh", overflow:"auto", padding:"20px 20px 32px", animation:"slideUpModal .25s ease" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-                  <h3 style={{ margin:0, fontSize:18, fontWeight:700, color:"#1A2332" }}>{title}</h3>
+                  <h3 style={{ margin:0, fontSize:18, fontWeight:700, color:"#082B66" }}>{title}</h3>
                   <button onClick={onClose} style={{ background:"#F0F1F4", border:"none", borderRadius:10, padding:6, cursor:"pointer" }}><X size={18}/></button>
                 </div>
                 {children}
@@ -158,107 +154,109 @@
           );
         }
  
-        // ─── Alertes (Paiements en retard) ───
+        // ─── Alertes ───
         function AlertsBanner({ remplacements, setRemplacements, cabinets }) {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          
+          const today = new Date(); today.setHours(0, 0, 0, 0);
           const cabMap = Object.fromEntries(cabinets.map(c => [c.id, c]));
-
-          const alerts = remplacements
-            .filter(r => r.status === "pending" || r.status === "invoiced")
+          const alerts = remplacements.filter(r => r.status === "pending" || r.status === "invoiced")
             .map(r => {
-              const repDate = new Date(r.date);
-              repDate.setHours(0, 0, 0, 0);
+              const repDate = new Date(r.date); repDate.setHours(0, 0, 0, 0);
               const diffDays = Math.floor((today - repDate) / (1000 * 60 * 60 * 24));
-              
-              if (diffDays > 30) {
-                return { ...r, days: diffDays, cabName: cabMap[r.cabinetId]?.name || "Inconnu" };
-              }
+              if (diffDays > 30) return { ...r, days: diffDays, cabName: cabMap[r.cabinetId]?.name || "Inconnu" };
               return null;
-            })
-            .filter(Boolean);
+            }).filter(Boolean);
 
           if (alerts.length === 0) return null;
-
-          const markAsPaid = (id) => {
-            setRemplacements(prev => prev.map(r => r.id === id ? { ...r, status: "paid" } : r));
-          };
+          const markAsPaid = (id) => setRemplacements(prev => prev.map(r => r.id === id ? { ...r, status: "paid" } : r));
 
           return (
-            <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 10, animation: "fadeIn 1s ease" }}>
               {alerts.map(a => (
-                <div key={a.id} style={{
-                  background: a.days > 45 ? "#FFEBEE" : "#FFF8E1",
-                  borderLeft: `4px solid ${a.days > 45 ? "#EF5350" : "#E8A838"}`,
-                  padding: "12px 14px", borderRadius: 12, display: "flex", 
-                  justifyContent: "space-between", alignItems:"center",
-                  boxShadow: "0 1px 3px rgba(0,0,0,.05)"
-                }}>
+                <div key={a.id} style={{ background: a.days > 45 ? "#FFEBEE" : "#FFF8E1", borderLeft: `4px solid ${a.days > 45 ? "#EF5350" : "#E8A838"}`, padding: "12px 14px", borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems:"center" }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2332" }}>
-                      {a.cabName} - En retard de {a.days} jours
-                    </div>
-                    <div style={{ fontSize: 11, color: "#8B95A5", marginTop: 2 }}>
-                      Remplacement du {new Date(a.date).toLocaleDateString('fr-FR')} ({a.amountPlanned}€)
-                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2332" }}>{a.cabName} - En retard de {a.days} jours</div>
+                    <div style={{ fontSize: 11, color: "#8B95A5", marginTop: 2 }}>Remplacement du {new Date(a.date).toLocaleDateString('fr-FR')} ({a.amountPlanned}€)</div>
                   </div>
-                  <button onClick={() => markAsPaid(a.id)} style={{
-                    background: "#2D9F93", color: "white", border:"none", 
-                    padding: "6px 12px", borderRadius: 8, fontSize: 12, 
-                    cursor: "pointer", fontWeight: 600
-                  }}>
-                    Marquer payé
-                  </button>
+                  <button onClick={() => markAsPaid(a.id)} style={{ background: "#082B66", color: "white", border:"none", padding: "6px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer", fontWeight: 600 }}>Marquer payé</button>
                 </div>
               ))}
             </div>
           );
         }
          
-        // ─── Dashboard ───
-        function Dashboard({ remplacements, setRemplacements, cabinets, params }) {
+        // ─── Dashboard Premium (Page d'accueil) ───
+        function Dashboard({ remplacements, setRemplacements, cabinets, params, setPage, openForm }) {
           const now = new Date();
           const month = now.getMonth(), year = now.getFullYear();
-          const thisMonth = remplacements.filter(r => {
-            const d = new Date(r.date);
-            return d.getMonth()===month && d.getFullYear()===year && r.status!=="cancelled";
-          });
+          const thisMonth = remplacements.filter(r => { const d = new Date(r.date); return d.getMonth()===month && d.getFullYear()===year && r.status!=="cancelled"; });
           const totalRevenu = thisMonth.reduce((s,r) => s + (parseFloat(r.amountPlanned)||0), 0);
           const totalPaid = thisMonth.reduce((s,r) => s + (parseFloat(r.amountReceived)||0), 0);
           const totalKm = thisMonth.reduce((s,r) => s + (parseFloat(r.km)||0), 0);
-          const totalHours = thisMonth.reduce((s,r) => {
-            if(!r.start||!r.end) return s;
-            const [h1,m1]=r.start.split(":").map(Number), [h2,m2]=r.end.split(":").map(Number);
-            return s + (h2-h1) + (m2-m1)/60;
-          }, 0);
+          const totalHours = thisMonth.reduce((s,r) => { if(!r.start||!r.end) return s; const [h1,m1]=r.start.split(":").map(Number), [h2,m2]=r.end.split(":").map(Number); return s + (h2-h1) + (m2-m1)/60; }, 0);
          
           return (
-            <div>
-              <div style={{ marginBottom: 20 }}>
-                <h2 style={{ margin:0, fontSize:22, fontWeight:800, color:"#1A2332" }}>Bonjour {params.name||"👋"}</h2>
-                <p style={{ margin:"4px 0 0", fontSize:13, color:"#8B95A5" }}>{MONTHS_FR[month]} {year}</p>
-              </div>
+            <div style={{ paddingBottom: 20 }}>
               
-              <AlertsBanner 
-                remplacements={remplacements} 
-                setRemplacements={setRemplacements} 
-                cabinets={cabinets} 
-              />
-
-              <div style={{ display:"flex", flexWrap:"wrap", gap:12 }}>
-                <KpiCard icon={CalendarDays} label="Remplacements" value={thisMonth.length} color="#2D9F93" />
-                <KpiCard icon={Euro} label="Revenus estimés" value={`${totalRevenu.toFixed(0)} €`} sub={`${totalPaid.toFixed(0)} € reçus`} color="#6C8EEF" />
-                <KpiCard icon={AlertCircle} label="Reste à percevoir" value={`${(totalRevenu-totalPaid).toFixed(0)} €`} color="#F0786A" />
-                <KpiCard icon={Car} label="Kilomètres" value={`${totalKm.toFixed(0)} km`} color="#E8A838" />
-                <KpiCard icon={Clock} label="Heures travaillées" value={`${totalHours.toFixed(1)} h`} color="#9B6DD7" />
-                <KpiCard icon={Building2} label="Cabinets actifs" value={cabinets.length} color="#4CAF50" />
-              </div>
-              {thisMonth.length === 0 && (
-                <div style={{ textAlign:"center", padding:32, color:"#8B95A5", fontSize:14, marginTop:16 }}>
-                  Aucun remplacement ce mois-ci. Ajoutez-en depuis l'onglet Planning !
+              {/* HERO SECTION */}
+              <div style={{
+                background: 'linear-gradient(160deg, #082B66 0%, #1BC7C9 120%)',
+                margin: '0 -16px 24px',
+                padding: '40px 24px 30px',
+                borderBottomLeftRadius: '32px',
+                borderBottomRightRadius: '32px',
+                color: 'white',
+                textAlign: 'center',
+                boxShadow: '0 10px 30px rgba(8, 43, 102, 0.2)',
+                animation: 'fadeInDown 0.8s ease-out'
+              }}>
+                <img 
+                  src="https://z-cdn-media.chatglm.cn/files/ece349d0-467a-44f5-84ab-2ef83912def0.png" 
+                  alt="Rempla'IDEL Logo" 
+                  style={{ width: '110px', height: 'auto', marginBottom: '16px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))' }}
+                />
+                <h1 style={{ margin:0, fontSize:28, fontWeight:800, letterSpacing: "-0.5px" }}>Rempla'IDEL</h1>
+                <p style={{ margin:"8px 0 0", fontSize:15, fontWeight:500, opacity: 0.95 }}>La gestion intelligente des remplacements infirmiers.</p>
+                <p style={{ margin:"4px 0 0", fontSize:12, opacity: 0.7, fontStyle: 'italic' }}>Gagnez du temps. Suivez vos revenus. Centralisez votre activité.</p>
+                
+                {/* Boutons rapides */}
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '24px' }}>
+                  <button 
+                    onClick={() => openForm('')} 
+                    style={{ background: 'white', color: '#082B66', border: 'none', padding: '12px 20px', borderRadius: '16px', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <Plus size={16} /> Nouveau remplacement
+                  </button>
+                  <button 
+                    onClick={() => setPage('plan')} 
+                    style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '12px 20px', borderRadius: '16px', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <CalendarDays size={16} /> Voir le planning
+                  </button>
                 </div>
-              )}
+              </div>
+
+              {/* STATS GRID */}
+              <div style={{ marginBottom: 16, padding: '0 4px' }}>
+                <h2 style={{ margin:"0 0 16px", fontSize:18, fontWeight:700, color:"#082B66" }}>Bonjour {params.name?.split(' ')[0] || "👋"}, voici votre activité</h2>
+                <p style={{ margin:"0 0 16px", fontSize:13, color:"#8B95A5" }}>{MONTHS_FR[month]} {year}</p>
+                
+                <AlertsBanner remplacements={remplacements} setRemplacements={setRemplacements} cabinets={cabinets} />
+
+                <div style={{ display:"flex", flexWrap:"wrap", gap:12 }}>
+                  <KpiCard icon={CalendarDays} label="Remplacements" value={thisMonth.length} color="#1BC7C9" delay={0.1} />
+                  <KpiCard icon={Euro} label="Revenus estimés" value={`${totalRevenu.toFixed(0)} €`} sub={`${totalPaid.toFixed(0)} € reçus`} color="#082B66" delay={0.2} />
+                  <KpiCard icon={AlertCircle} label="À percevoir" value={`${(totalRevenu-totalPaid).toFixed(0)} €`} color="#F0786A" delay={0.3} />
+                  <KpiCard icon={Car} label="Kilomètres" value={`${totalKm.toFixed(0)} km`} color="#E8A838" delay={0.4} />
+                  <KpiCard icon={Clock} label="Heures travaillées" value={`${totalHours.toFixed(1)} h`} color="#9B6DD7" delay={0.5} />
+                  <KpiCard icon={Building2} label="Cabinets actifs" value={cabinets.length} color="#4CAF50" delay={0.6} />
+                </div>
+              </div>
+
+              {/* FOOTER */}
+              <div style={{ textAlign: 'center', marginTop: '32px', opacity: 0, animation: 'fadeIn 1s ease 1s forwards' }}>
+                <div style={{ fontSize: 12, color: '#8B95A5', marginBottom: 4 }}>Version 1.0</div>
+                <div style={{ fontSize: 12, color: '#1BC7C9', fontWeight: 600 }}>✨ Powered by IA</div>
+              </div>
             </div>
           );
         }
@@ -267,7 +265,7 @@
         function Cabinets({ cabinets, setCabinets }) {
           const [editing, setEditing] = useState(null);
           const [viewing, setViewing] = useState(null);
-          const empty = { name:"", color:COLORS[0], address:"", phone:"", email:"", digicode:"", floor:"", parking:"", software:"", hours:"", notes:"" };
+          const empty = { name:"", color:COLORS[1], address:"", phone:"", email:"", digicode:"", floor:"", parking:"", software:"", hours:"", notes:"" };
          
           function save(c) {
             if(!c.name.trim()) return;
@@ -280,17 +278,13 @@
           return (
             <div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-                <h2 style={{ margin:0, fontSize:20, fontWeight:700 }}>Cabinets</h2>
+                <h2 style={{ margin:0, fontSize:20, fontWeight:700, color:"#082B66" }}>Cabinets</h2>
                 <Btn icon={Plus} onClick={()=>setEditing({...empty})}>Ajouter</Btn>
               </div>
               {cabinets.length===0 && <p style={{ color:"#8B95A5", textAlign:"center", padding:32 }}>Aucun cabinet. Commencez par en créer un !</p>}
               <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                 {cabinets.map(c => (
-                  <div key={c.id} onClick={()=>setViewing(c)} style={{
-                    background:"#fff", borderRadius:14, padding:"14px 16px", cursor:"pointer",
-                    boxShadow:"0 1px 3px rgba(0,0,0,.05)", borderLeft:`4px solid ${c.color}`,
-                    display:"flex", alignItems:"center", gap:12, transition:"transform .1s"
-                  }}>
+                  <div key={c.id} onClick={()=>setViewing(c)} style={{ background:"#fff", borderRadius:14, padding:"14px 16px", cursor:"pointer", boxShadow:"0 2px 8px rgba(8,43,102,0.04)", borderLeft:`4px solid ${c.color}`, display:"flex", alignItems:"center", gap:12 }}>
                     <Building2 size={20} color={c.color} />
                     <div style={{ flex:1 }}>
                       <div style={{ fontWeight:600, fontSize:15, color:"#1A2332" }}>{c.name}</div>
@@ -304,9 +298,9 @@
               {viewing && (
                 <Modal title={viewing.name} onClose={()=>setViewing(null)}>
                   <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                    {viewing.address && <div style={{ fontSize:14, display:"flex", alignItems:"center", gap:8 }}><MapPin size={14} color="#8B95A5"/>{viewing.address}</div>}
-                    {viewing.phone && <div style={{ fontSize:14, display:"flex", alignItems:"center", gap:8 }}><Phone size={14} color="#8B95A5"/>{viewing.phone}</div>}
-                    {viewing.email && <div style={{ fontSize:14, display:"flex", alignItems:"center", gap:8 }}><Mail size={14} color="#8B95A5"/>{viewing.email}</div>}
+                    {viewing.address && <div style={{ fontSize:14, display:"flex", alignItems:"center", gap:8 }}><MapPin size={14} color="#1BC7C9"/>{viewing.address}</div>}
+                    {viewing.phone && <div style={{ fontSize:14, display:"flex", alignItems:"center", gap:8 }}><Phone size={14} color="#1BC7C9"/>{viewing.phone}</div>}
+                    {viewing.email && <div style={{ fontSize:14, display:"flex", alignItems:"center", gap:8 }}><Mail size={14} color="#1BC7C9"/>{viewing.email}</div>}
                     {viewing.digicode && <div style={{ fontSize:14 }}>🔑 Digicode : {viewing.digicode}</div>}
                     {viewing.floor && <div style={{ fontSize:14 }}>🏢 Étage : {viewing.floor}</div>}
                     {viewing.parking && <div style={{ fontSize:14 }}>🅿️ Parking : {viewing.parking}</div>}
@@ -340,10 +334,7 @@
                 <label style={{ fontSize:12, fontWeight:600, color:"#5A6578", display:"block", marginBottom:6 }}>Couleur</label>
                 <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                   {COLORS.map(col => (
-                    <div key={col} onClick={()=>up("color",col)} style={{
-                      width:28, height:28, borderRadius:8, background:col, cursor:"pointer",
-                      border: c.color===col ? "3px solid #1A2332" : "3px solid transparent", transition:"border .1s"
-                    }} />
+                    <div key={col} onClick={()=>up("color",col)} style={{ width:28, height:28, borderRadius:8, background:col, cursor:"pointer", border: c.color===col ? "3px solid #1A2332" : "3px solid transparent" }} />
                   ))}
                 </div>
               </div>
@@ -372,21 +363,19 @@
         const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
         const getMonday = (d) => { const dt = new Date(d); const day = dt.getDay(); dt.setDate(dt.getDate() - ((day+6)%7)); dt.setHours(0,0,0,0); return dt; };
         const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate()+n); return r; };
-        const HOURS = Array.from({length:17}, (_,i) => i+5); // 5h–21h
+        const HOURS = Array.from({length:17}, (_,i) => i+5);
         const timeToY = (t) => { if(!t) return 0; const [h,m] = t.split(":").map(Number); return ((h-5) + m/60); };
         const DAYS_FULL = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
          
         // ─── Planning ───
         function Planning({ remplacements, setRemplacements, cabinets, onAdd, onEdit }) {
-          const [view, setView] = useState("month"); // month | week | day
+          const [view, setView] = useState("month");
           const [cur, setCur] = useState(new Date());
-          const [clipboard, setClipboard] = useState(null); // { type:"day"|"week", events:[] }
+          const [clipboard, setClipboard] = useState(null);
           const [dragId, setDragId] = useState(null);
           const today = new Date();
-         
           const cabMap = useMemo(() => Object.fromEntries(cabinets.map(c=>[c.id,c])), [cabinets]);
          
-          // Navigation helpers
           const nav = (dir) => {
             if(view==="month") setCur(new Date(cur.getFullYear(), cur.getMonth()+dir, 1));
             else if(view==="week") setCur(addDays(cur, dir*7));
@@ -398,68 +387,30 @@
             return `${DAYS_FULL[(cur.getDay()+6)%7]} ${cur.getDate()} ${MONTHS_FR[cur.getMonth()]}`;
           };
          
-          const eventsForDate = useCallback((dateStr) =>
-            remplacements.filter(r => r.date === dateStr && r.status !== "cancelled"), [remplacements]);
-         
-          // Drag & Drop
-          const handleDrop = (targetDate) => {
-            if(!dragId) return;
-            setRemplacements(prev => prev.map(r => r.id===dragId ? {...r, date: targetDate} : r));
-            setDragId(null);
-          };
-         
-          // Copy day/week
-          const copyDay = (dateStr) => {
-            const evts = eventsForDate(dateStr);
-            if(evts.length===0) return;
-            setClipboard({ type:"day", events: evts.map(({id,...rest})=>rest) });
-          };
+          const eventsForDate = useCallback((dateStr) => remplacements.filter(r => r.date === dateStr && r.status !== "cancelled"), [remplacements]);
+          const handleDrop = (targetDate) => { if(!dragId) return; setRemplacements(prev => prev.map(r => r.id===dragId ? {...r, date: targetDate} : r)); setDragId(null); };
+          const copyDay = (dateStr) => { const evts = eventsForDate(dateStr); if(evts.length===0) return; setClipboard({ type:"day", events: evts.map(({id,...rest})=>rest) }); };
           const copyWeek = () => {
-            const mon = getMonday(cur);
-            const evts = [];
-            for(let i=0; i<7; i++) {
-              const d = fmtDate(addDays(mon, i));
-              eventsForDate(d).forEach(({id,...rest}) => evts.push({...rest, _offset: i}));
-            }
-            if(evts.length===0) return;
-            setClipboard({ type:"week", events: evts });
+            const mon = getMonday(cur); const evts = [];
+            for(let i=0; i<7; i++) { const d = fmtDate(addDays(mon, i)); eventsForDate(d).forEach(({id,...rest}) => evts.push({...rest, _offset: i})); }
+            if(evts.length===0) return; setClipboard({ type:"week", events: evts });
           };
           const paste = (targetDate) => {
             if(!clipboard) return;
-            if(clipboard.type==="day") {
-              const newEvts = clipboard.events.map(e => ({...e, id: uid(), date: targetDate}));
-              setRemplacements(prev => [...prev, ...newEvts]);
-            } else {
-              const mon = getMonday(new Date(targetDate));
-              const newEvts = clipboard.events.map(e => ({...e, id: uid(), date: fmtDate(addDays(mon, e._offset)), _offset:undefined}));
-              setRemplacements(prev => [...prev, ...newEvts]);
-            }
+            if(clipboard.type==="day") { const newEvts = clipboard.events.map(e => ({...e, id: uid(), date: targetDate})); setRemplacements(prev => [...prev, ...newEvts]); } 
+            else { const mon = getMonday(new Date(targetDate)); const newEvts = clipboard.events.map(e => ({...e, id: uid(), date: fmtDate(addDays(mon, e._offset)), _offset:undefined})); setRemplacements(prev => [...prev, ...newEvts]); }
           };
          
-          // ─── Event chip ───
           const EventChip = ({ ev, compact }) => {
             const cab = cabMap[ev.cabinetId];
             return (
-              <div
-                draggable
-                onDragStart={(e) => { setDragId(ev.id); e.dataTransfer.effectAllowed="move"; }}
-                onClick={(e) => { e.stopPropagation(); onEdit(ev); }}
-                style={{
-                  fontSize: compact ? 9 : 12, padding: compact ? "2px 4px" : "4px 8px",
-                  borderRadius: compact ? 4 : 8, marginBottom: compact ? 1 : 4,
-                  background: cab ? cab.color+"18" : "#F0F1F4", color: cab?.color || "#5A6578",
-                  fontWeight:600, cursor:"grab", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis",
-                  borderLeft: compact ? "none" : `3px solid ${cab?.color||"#8B95A5"}`,
-                  transition:"transform .1s"
-                }}
-              >
-                {ev.start && <span>{ev.start}{ev.end ? `–${ev.end}` : ""} </span>}
-                {cab?.name || "—"}
+              <div draggable onDragStart={(e) => { setDragId(ev.id); e.dataTransfer.effectAllowed="move"; }} onClick={(e) => { e.stopPropagation(); onEdit(ev); }}
+                style={{ fontSize: compact ? 9 : 12, padding: compact ? "2px 4px" : "4px 8px", borderRadius: compact ? 4 : 8, marginBottom: compact ? 1 : 4, background: cab ? cab.color+"18" : "#F0F1F4", color: cab?.color || "#5A6578", fontWeight:600, cursor:"grab", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", borderLeft: compact ? "none" : `3px solid ${cab?.color||"#8B95A5"}` }}>
+                {ev.start && <span>{ev.start}{ev.end ? `–${ev.end}` : ""} </span>}{cab?.name || "—"}
               </div>
             );
           };
          
-          // ─── MONTH VIEW ───
           const MonthView = () => {
             const month = cur.getMonth(), year = cur.getFullYear();
             const startDay = (new Date(year, month, 1).getDay() + 6) % 7;
@@ -480,17 +431,9 @@
                     const isToday = dateStr === fmtDate(today);
                     const evts = eventsForDate(dateStr);
                     return (
-                      <div key={day}
-                        onClick={() => { if(evts.length===1) onEdit(evts[0]); else if(evts.length>1) { setCur(new Date(dateStr)); setView("day"); } else onAdd(dateStr); }}
-                        onDragOver={e => e.preventDefault()}
-                        onDrop={() => handleDrop(dateStr)}
-                        style={{
-                          minHeight:52, borderRadius:10, padding:4, cursor:"pointer",
-                          background: isToday ? "#E8F7F5" : dragId ? "#FAFBFC" : "#fff",
-                          border: isToday ? "2px solid #2D9F93" : "1px solid #ECEEF2"
-                        }}
-                      >
-                        <div style={{ fontSize:12, fontWeight: isToday ? 700 : 500, color: isToday ? "#2D9F93" : "#1A2332", textAlign:"right", marginBottom:2 }}>{day}</div>
+                      <div key={day} onClick={() => { if(evts.length===1) onEdit(evts[0]); else if(evts.length>1) { setCur(new Date(dateStr)); setView("day"); } else onAdd(dateStr); }} onDragOver={e => e.preventDefault()} onDrop={() => handleDrop(dateStr)}
+                        style={{ minHeight:52, borderRadius:10, padding:4, cursor:"pointer", background: isToday ? "#E0F7FA" : dragId ? "#FAFBFC" : "#fff", border: isToday ? "2px solid #1BC7C9" : "1px solid #ECEEF2" }}>
+                        <div style={{ fontSize:12, fontWeight: isToday ? 700 : 500, color: isToday ? "#082B66" : "#1A2332", textAlign:"right", marginBottom:2 }}>{day}</div>
                         {evts.slice(0,2).map(ev => <EventChip key={ev.id} ev={ev} compact />)}
                         {evts.length > 2 && <div style={{ fontSize:9, color:"#8B95A5" }}>+{evts.length-2}</div>}
                       </div>
@@ -501,40 +444,20 @@
             );
           };
          
-          // ─── WEEK VIEW ───
           const WeekView = () => {
-            const mon = getMonday(cur);
-            const days = Array.from({length:7}, (_,i) => addDays(mon, i));
-         
+            const mon = getMonday(cur); const days = Array.from({length:7}, (_,i) => addDays(mon, i));
             return (
               <div style={{ display:"flex", gap:4, overflowX:"auto", paddingBottom:8 }}>
                 {days.map((d, i) => {
-                  const dateStr = fmtDate(d);
-                  const isToday = dateStr === fmtDate(today);
-                  const evts = eventsForDate(dateStr);
+                  const dateStr = fmtDate(d); const isToday = dateStr === fmtDate(today); const evts = eventsForDate(dateStr);
                   return (
-                    <div key={i}
-                      onDragOver={e => e.preventDefault()}
-                      onDrop={() => handleDrop(dateStr)}
-                      style={{
-                        flex:"1 0 0", minWidth:60, background: isToday ? "#E8F7F5" : "#fff",
-                        borderRadius:12, border: isToday ? "2px solid #2D9F93" : "1px solid #ECEEF2",
-                        padding:6, minHeight:280
-                      }}
-                    >
+                    <div key={i} onDragOver={e => e.preventDefault()} onDrop={() => handleDrop(dateStr)} style={{ flex:"1 0 0", minWidth:60, background: isToday ? "#E0F7FA" : "#fff", borderRadius:12, border: isToday ? "2px solid #1BC7C9" : "1px solid #ECEEF2", padding:6, minHeight:280 }}>
                       <div style={{ textAlign:"center", marginBottom:8 }}>
                         <div style={{ fontSize:11, fontWeight:600, color:"#8B95A5" }}>{DAYS_FR[i]}</div>
-                        <div style={{
-                          fontSize:16, fontWeight:700, color: isToday ? "#fff" : "#1A2332",
-                          background: isToday ? "#2D9F93" : "transparent", borderRadius:20,
-                          width:28, height:28, lineHeight:"28px", margin:"2px auto 0"
-                        }}>{d.getDate()}</div>
+                        <div style={{ fontSize:16, fontWeight:700, color: isToday ? "#fff" : "#1A2332", background: isToday ? "#082B66" : "transparent", borderRadius:20, width:28, height:28, lineHeight:"28px", margin:"2px auto 0" }}>{d.getDate()}</div>
                       </div>
                       {evts.sort((a,b) => (a.start||"").localeCompare(b.start||"")).map(ev => <EventChip key={ev.id} ev={ev} compact={false} />)}
-                      <div
-                        onClick={() => onAdd(dateStr)}
-                        style={{ textAlign:"center", padding:6, cursor:"pointer", color:"#2D9F93", fontSize:18, borderRadius:8, marginTop:4 }}
-                      >+</div>
+                      <div onClick={() => onAdd(dateStr)} style={{ textAlign:"center", padding:6, cursor:"pointer", color:"#082B66", fontSize:18, borderRadius:8, marginTop:4 }}>+</div>
                     </div>
                   );
                 })}
@@ -542,47 +465,21 @@
             );
           };
          
-          // ─── DAY VIEW ───
           const DayView = () => {
-            const dateStr = fmtDate(cur);
-            const isToday = dateStr === fmtDate(today);
-            const evts = eventsForDate(dateStr).sort((a,b) => (a.start||"").localeCompare(b.start||""));
-         
+            const dateStr = fmtDate(cur); const isToday = dateStr === fmtDate(today); const evts = eventsForDate(dateStr).sort((a,b) => (a.start||"").localeCompare(b.start||""));
             return (
-              <div
-                onDragOver={e => e.preventDefault()}
-                onDrop={() => handleDrop(dateStr)}
-                style={{ background:"#fff", borderRadius:14, border: isToday ? "2px solid #2D9F93" : "1px solid #ECEEF2", overflow:"hidden" }}
-              >
-                {/* Time grid */}
+              <div onDragOver={e => e.preventDefault()} onDrop={() => handleDrop(dateStr)} style={{ background:"#fff", borderRadius:14, border: isToday ? "2px solid #1BC7C9" : "1px solid #ECEEF2", overflow:"hidden" }}>
                 <div style={{ position:"relative", minHeight: HOURS.length * 44 }}>
                   {HOURS.map(h => (
-                    <div key={h} onClick={() => onAdd(dateStr)} style={{
-                      height:44, borderBottom:"1px solid #F0F1F4", display:"flex", alignItems:"flex-start",
-                      padding:"2px 8px", cursor:"pointer"
-                    }}>
+                    <div key={h} onClick={() => onAdd(dateStr)} style={{ height:44, borderBottom:"1px solid #F0F1F4", display:"flex", alignItems:"flex-start", padding:"2px 8px", cursor:"pointer" }}>
                       <span style={{ fontSize:11, color:"#8B95A5", fontWeight:500, minWidth:36 }}>{String(h).padStart(2,"0")}:00</span>
                     </div>
                   ))}
-                  {/* Events positioned */}
                   {evts.filter(ev => ev.start).map(ev => {
-                    const top = timeToY(ev.start) * 44;
-                    const height = ev.end ? (timeToY(ev.end) - timeToY(ev.start)) * 44 : 44;
-                    const cab = cabMap[ev.cabinetId];
+                    const top = timeToY(ev.start) * 44; const height = ev.end ? (timeToY(ev.end) - timeToY(ev.start)) * 44 : 44; const cab = cabMap[ev.cabinetId];
                     return (
-                      <div key={ev.id}
-                        draggable
-                        onDragStart={() => setDragId(ev.id)}
-                        onClick={(e) => { e.stopPropagation(); onEdit(ev); }}
-                        style={{
-                          position:"absolute", top, left:44, right:8, height: Math.max(height, 28),
-                          background: cab ? cab.color+"20" : "#F0F1F4",
-                          borderLeft: `4px solid ${cab?.color||"#8B95A5"}`,
-                          borderRadius:8, padding:"4px 8px", cursor:"grab",
-                          fontSize:13, fontWeight:600, color: cab?.color || "#5A6578",
-                          overflow:"hidden", zIndex:2
-                        }}
-                      >
+                      <div key={ev.id} draggable onDragStart={() => setDragId(ev.id)} onClick={(e) => { e.stopPropagation(); onEdit(ev); }}
+                        style={{ position:"absolute", top, left:44, right:8, height: Math.max(height, 28), background: cab ? cab.color+"20" : "#F0F1F4", borderLeft: `4px solid ${cab?.color||"#8B95A5"}`, borderRadius:8, padding:"4px 8px", cursor:"grab", fontSize:13, fontWeight:600, color: cab?.color || "#5A6578", overflow:"hidden", zIndex:2 }}>
                         <div>{ev.start}–{ev.end||"?"}</div>
                         <div style={{ fontSize:11, fontWeight:500, opacity:.8 }}>{cab?.name||"—"}</div>
                         {ev.notes && <div style={{ fontSize:10, fontWeight:400, opacity:.6, marginTop:2 }}>{ev.notes}</div>}
@@ -590,7 +487,6 @@
                     );
                   })}
                 </div>
-                {/* Events sans horaire */}
                 {evts.filter(ev => !ev.start).length > 0 && (
                   <div style={{ padding:8, borderTop:"1px solid #ECEEF2" }}>
                     <div style={{ fontSize:11, color:"#8B95A5", marginBottom:4 }}>Sans horaire :</div>
@@ -603,47 +499,31 @@
          
           return (
             <div>
-              {/* View toggle */}
               <div style={{ display:"flex", background:"#ECEEF2", borderRadius:12, padding:3, marginBottom:12, gap:2 }}>
                 {[["month","Mois"],["week","Semaine"],["day","Jour"]].map(([v,l]) => (
-                  <button key={v} onClick={()=>setView(v)} style={{
-                    flex:1, padding:"7px 0", borderRadius:10, border:"none", fontSize:13, fontWeight:600, cursor:"pointer",
-                    background: view===v ? "#fff" : "transparent", color: view===v ? "#2D9F93" : "#8B95A5",
-                    boxShadow: view===v ? "0 1px 3px rgba(0,0,0,.08)" : "none", transition:"all .15s"
-                  }}>{l}</button>
+                  <button key={v} onClick={()=>setView(v)} style={{ flex:1, padding:"7px 0", borderRadius:10, border:"none", fontSize:13, fontWeight:600, cursor:"pointer", background: view===v ? "#fff" : "transparent", color: view===v ? "#082B66" : "#8B95A5", boxShadow: view===v ? "0 1px 3px rgba(0,0,0,.08)" : "none" }}>{l}</button>
                 ))}
               </div>
-         
-              {/* Nav */}
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-                <button onClick={()=>nav(-1)} style={{ background:"none", border:"none", cursor:"pointer", padding:6 }}><ChevronLeft size={20}/></button>
-                <h2 style={{ margin:0, fontSize:16, fontWeight:700, textAlign:"center", flex:1 }}>{navLabel()}</h2>
-                <button onClick={()=>nav(1)} style={{ background:"none", border:"none", cursor:"pointer", padding:6 }}><ChevronRight size={20}/></button>
+                <button onClick={()=>nav(-1)} style={{ background:"none", border:"none", cursor:"pointer", padding:6, color:"#082B66" }}><ChevronLeft size={20}/></button>
+                <h2 style={{ margin:0, fontSize:16, fontWeight:700, textAlign:"center", flex:1, color:"#082B66" }}>{navLabel()}</h2>
+                <button onClick={()=>nav(1)} style={{ background:"none", border:"none", cursor:"pointer", padding:6, color:"#082B66" }}><ChevronRight size={20}/></button>
               </div>
-         
-              {/* Aujourd'hui */}
               <div style={{ display:"flex", gap:6, marginBottom:12, flexWrap:"wrap" }}>
                 <Btn variant="ghost" onClick={()=>{ setCur(new Date()); }} style={{ fontSize:12, padding:"6px 12px" }}>Aujourd'hui</Btn>
                 {view==="day" && <Btn variant="ghost" icon={Copy} onClick={()=>copyDay(fmtDate(cur))} style={{ fontSize:12, padding:"6px 12px" }}>Copier jour</Btn>}
                 {view==="week" && <Btn variant="ghost" icon={Copy} onClick={copyWeek} style={{ fontSize:12, padding:"6px 12px" }}>Copier semaine</Btn>}
-                {clipboard && (
-                  <Btn icon={FileText} onClick={()=>paste(fmtDate(cur))} style={{ fontSize:12, padding:"6px 12px", background:"#FFF3E0", color:"#E8A838" }}>
-                    Coller {clipboard.type==="day" ? "jour" : "semaine"} ({clipboard.events.length})
-                  </Btn>
-                )}
+                {clipboard && <Btn icon={FileText} onClick={()=>paste(fmtDate(cur))} style={{ fontSize:12, padding:"6px 12px", background:"#E0F7FA", color:"#082B66" }}>Coller ({clipboard.events.length})</Btn>}
               </div>
-         
-              {/* View content */}
               {view==="month" && <MonthView />}
               {view==="week" && <WeekView />}
               {view==="day" && <DayView />}
-         
               <Btn icon={Plus} onClick={()=>onAdd(view==="day" ? fmtDate(cur) : "")} style={{ marginTop:16, width:"100%" }}>Nouveau remplacement</Btn>
             </div>
           );
         }
          
-        // ─── Remplacement Form ───
+        // ─── Formulaires & Stats (Finances, Km, Params) ───
         function ReplacementForm({ replacement, cabinets, onSave, onDelete, onCancel }) {
           const [r, setR] = useState(replacement);
           const up = (k,v) => setR(p=>({...p,[k]:v}));
@@ -673,69 +553,54 @@
           );
         }
          
-        // ─── Finances ───
         function Finances({ remplacements, cabinets }) {
           const cabMap = Object.fromEntries(cabinets.map(c=>[c.id,c]));
-          const now = new Date();
           const byMonth = {};
           remplacements.filter(r=>r.status!=="cancelled").forEach(r => {
-            const d = new Date(r.date);
-            const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+            const d = new Date(r.date); const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
             if(!byMonth[key]) byMonth[key] = { planned:0, received:0, count:0 };
-            byMonth[key].planned += parseFloat(r.amountPlanned)||0;
-            byMonth[key].received += parseFloat(r.amountReceived)||0;
-            byMonth[key].count++;
+            byMonth[key].planned += parseFloat(r.amountPlanned)||0; byMonth[key].received += parseFloat(r.amountReceived)||0; byMonth[key].count++;
           });
           const months = Object.keys(byMonth).sort().reverse().slice(0,12);
-         
           const byCab = {};
           remplacements.filter(r=>r.status!=="cancelled").forEach(r => {
             const name = cabMap[r.cabinetId]?.name || "Sans cabinet";
             if(!byCab[name]) byCab[name] = { planned:0, received:0, count:0, color: cabMap[r.cabinetId]?.color || "#8B95A5" };
-            byCab[name].planned += parseFloat(r.amountPlanned)||0;
-            byCab[name].received += parseFloat(r.amountReceived)||0;
-            byCab[name].count++;
+            byCab[name].planned += parseFloat(r.amountPlanned)||0; byCab[name].received += parseFloat(r.amountReceived)||0; byCab[name].count++;
           });
-         
           const totalPlanned = remplacements.filter(r=>r.status!=="cancelled").reduce((s,r)=>s+(parseFloat(r.amountPlanned)||0),0);
           const totalReceived = remplacements.filter(r=>r.status!=="cancelled").reduce((s,r)=>s+(parseFloat(r.amountReceived)||0),0);
           const maxBar = Math.max(...Object.values(byCab).map(v=>v.planned), 1);
          
           return (
             <div>
-              <h2 style={{ margin:"0 0 16px", fontSize:20, fontWeight:700 }}>Finances</h2>
+              <h2 style={{ margin:"0 0 16px", fontSize:20, fontWeight:700, color:"#082B66" }}>Finances</h2>
               <div style={{ display:"flex", gap:12, marginBottom:20, flexWrap:"wrap" }}>
-                <KpiCard icon={TrendingUp} label="Total estimé" value={`${totalPlanned.toFixed(0)} €`} color="#6C8EEF" />
-                <KpiCard icon={Euro} label="Total reçu" value={`${totalReceived.toFixed(0)} €`} color="#2D9F93" />
-                <KpiCard icon={AlertCircle} label="Reste dû" value={`${(totalPlanned-totalReceived).toFixed(0)} €`} color="#F0786A" />
+                <KpiCard icon={TrendingUp} label="Total estimé" value={`${totalPlanned.toFixed(0)} €`} color="#082B66" delay={0.1} />
+                <KpiCard icon={Euro} label="Total reçu" value={`${totalReceived.toFixed(0)} €`} color="#1BC7C9" delay={0.2} />
+                <KpiCard icon={AlertCircle} label="Reste dû" value={`${(totalPlanned-totalReceived).toFixed(0)} €`} color="#F0786A" delay={0.3} />
               </div>
-         
-              <h3 style={{ fontSize:15, fontWeight:700, marginBottom:10 }}>Par cabinet</h3>
+              <h3 style={{ fontSize:15, fontWeight:700, marginBottom:10, color:"#082B66" }}>Par cabinet</h3>
               {Object.entries(byCab).map(([name,v]) => (
                 <div key={name} style={{ marginBottom:12 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, fontWeight:600, marginBottom:4 }}>
-                    <span>{name} ({v.count}j)</span>
-                    <span>{v.planned.toFixed(0)} €</span>
+                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, fontWeight:600, marginBottom:4, color:"#1A2332" }}>
+                    <span>{name} ({v.count}j)</span><span>{v.planned.toFixed(0)} €</span>
                   </div>
                   <div style={{ background:"#F0F1F4", borderRadius:6, height:10, overflow:"hidden" }}>
-                    <div style={{ height:"100%", borderRadius:6, background:v.color, width:`${(v.planned/maxBar)*100}%`, transition:"width .3s" }} />
+                    <div style={{ height:"100%", borderRadius:6, background:v.color, width:`${(v.planned/maxBar)*100}%` }} />
                   </div>
                   <div style={{ fontSize:11, color:"#8B95A5", marginTop:2 }}>Reçu : {v.received.toFixed(0)} € · Reste : {(v.planned-v.received).toFixed(0)} €</div>
                 </div>
               ))}
-         
-              <h3 style={{ fontSize:15, fontWeight:700, margin:"20px 0 10px" }}>Historique mensuel</h3>
+              <h3 style={{ fontSize:15, fontWeight:700, margin:"20px 0 10px", color:"#082B66" }}>Historique mensuel</h3>
               {months.length===0 && <p style={{ color:"#8B95A5", fontSize:13 }}>Aucune donnée</p>}
               {months.map(m => {
                 const d = byMonth[m];
                 return (
-                  <div key={m} style={{
-                    display:"flex", justifyContent:"space-between", padding:"10px 12px", background:"#fff",
-                    borderRadius:10, marginBottom:6, border:"1px solid #ECEEF2"
-                  }}>
-                    <span style={{ fontWeight:600, fontSize:14 }}>{MONTHS_FR[parseInt(m.split("-")[1])-1]} {m.split("-")[0]}</span>
+                  <div key={m} style={{ display:"flex", justifyContent:"space-between", padding:"10px 12px", background:"#fff", borderRadius:10, marginBottom:6, border:"1px solid #ECEEF2" }}>
+                    <span style={{ fontWeight:600, fontSize:14, color:"#1A2332" }}>{MONTHS_FR[parseInt(m.split("-")[1])-1]} {m.split("-")[0]}</span>
                     <div style={{ textAlign:"right" }}>
-                      <div style={{ fontSize:14, fontWeight:700, color:"#2D9F93" }}>{d.planned.toFixed(0)} €</div>
+                      <div style={{ fontSize:14, fontWeight:700, color:"#082B66" }}>{d.planned.toFixed(0)} €</div>
                       <div style={{ fontSize:11, color:"#8B95A5" }}>{d.count} jours · {d.received.toFixed(0)} € reçus</div>
                     </div>
                   </div>
@@ -745,38 +610,29 @@
           );
         }
          
-        // ─── Kilométrage ───
         function Kilometres({ remplacements, cabinets, params }) {
           const cabMap = Object.fromEntries(cabinets.map(c=>[c.id,c]));
-          const now = new Date();
-          const year = now.getFullYear();
+          const year = new Date().getFullYear();
           const yearData = remplacements.filter(r => new Date(r.date).getFullYear()===year && r.status!=="cancelled");
           const totalKm = yearData.reduce((s,r) => s + (parseFloat(r.km)||0), 0);
           const tarif = parseFloat(params.tarifKm) || 0.603;
           const indemnite = totalKm * tarif;
-         
           const byCab = {};
-          yearData.forEach(r => {
-            const name = cabMap[r.cabinetId]?.name || "Sans cabinet";
-            byCab[name] = (byCab[name]||0) + (parseFloat(r.km)||0);
-          });
+          yearData.forEach(r => { const name = cabMap[r.cabinetId]?.name || "Sans cabinet"; byCab[name] = (byCab[name]||0) + (parseFloat(r.km)||0); });
          
           return (
             <div>
-              <h2 style={{ margin:"0 0 16px", fontSize:20, fontWeight:700 }}>Kilométrage {year}</h2>
+              <h2 style={{ margin:"0 0 16px", fontSize:20, fontWeight:700, color:"#082B66" }}>Kilométrage {year}</h2>
               <div style={{ display:"flex", gap:12, flexWrap:"wrap", marginBottom:20 }}>
-                <KpiCard icon={Car} label="Total km" value={`${totalKm.toFixed(0)} km`} color="#E8A838" />
-                <KpiCard icon={Euro} label="Indemnités" value={`${indemnite.toFixed(0)} €`} sub={`${tarif} €/km`} color="#2D9F93" />
+                <KpiCard icon={Car} label="Total km" value={`${totalKm.toFixed(0)} km`} color="#E8A838" delay={0.1} />
+                <KpiCard icon={Euro} label="Indemnités" value={`${indemnite.toFixed(0)} €`} sub={`${tarif} €/km`} color="#1BC7C9" delay={0.2} />
               </div>
-              <h3 style={{ fontSize:15, fontWeight:700, marginBottom:10 }}>Par cabinet</h3>
+              <h3 style={{ fontSize:15, fontWeight:700, marginBottom:10, color:"#082B66" }}>Par cabinet</h3>
               {Object.entries(byCab).sort((a,b)=>b[1]-a[1]).map(([name,km]) => (
-                <div key={name} style={{
-                  display:"flex", justifyContent:"space-between", padding:"10px 14px",
-                  background:"#fff", borderRadius:10, marginBottom:6, border:"1px solid #ECEEF2"
-                }}>
-                  <span style={{ fontWeight:600, fontSize:14 }}>{name}</span>
+                <div key={name} style={{ display:"flex", justifyContent:"space-between", padding:"10px 14px", background:"#fff", borderRadius:10, marginBottom:6, border:"1px solid #ECEEF2" }}>
+                  <span style={{ fontWeight:600, fontSize:14, color:"#1A2332" }}>{name}</span>
                   <div style={{ textAlign:"right" }}>
-                    <span style={{ fontWeight:700, fontSize:14 }}>{km.toFixed(0)} km</span>
+                    <span style={{ fontWeight:700, fontSize:14, color:"#082B66" }}>{km.toFixed(0)} km</span>
                     <div style={{ fontSize:11, color:"#8B95A5" }}>{(km*tarif).toFixed(0)} €</div>
                   </div>
                 </div>
@@ -785,14 +641,13 @@
           );
         }
          
-        // ─── Paramètres ───
         function Parametres({ params, setParams }) {
           const up = (k,v) => setParams(p=>({...p,[k]:v}));
           return (
             <div>
-              <h2 style={{ margin:"0 0 16px", fontSize:20, fontWeight:700 }}>Paramètres</h2>
+              <h2 style={{ margin:"0 0 16px", fontSize:20, fontWeight:700, color:"#082B66" }}>Paramètres</h2>
               <div style={{ background:"#fff", borderRadius:14, padding:16, marginBottom:16, border:"1px solid #ECEEF2" }}>
-                <h3 style={{ fontSize:15, fontWeight:700, marginBottom:12 }}>Identité</h3>
+                <h3 style={{ fontSize:15, fontWeight:700, marginBottom:12, color:"#082B66" }}>Identité</h3>
                 <Input label="Nom IDEL" value={params.name||""} onChange={v=>up("name",v)} placeholder="Marie Dupont" />
                 <Input label="Adresse" value={params.address||""} onChange={v=>up("address",v)} />
                 <Input label="Téléphone" value={params.phone||""} onChange={v=>up("phone",v)} type="tel" />
@@ -803,17 +658,13 @@
                 <Input label="IBAN" value={params.iban||""} onChange={v=>up("iban",v)} />
               </div>
               <div style={{ background:"#fff", borderRadius:14, padding:16, marginBottom:16, border:"1px solid #ECEEF2" }}>
-                <h3 style={{ fontSize:15, fontWeight:700, marginBottom:12 }}>Tarifs</h3>
+                <h3 style={{ fontSize:15, fontWeight:700, marginBottom:12, color:"#082B66" }}>Tarifs</h3>
                 <Input label="Tarif journalier (€)" type="number" value={params.tarifJour||""} onChange={v=>up("tarifJour",v)} placeholder="300" />
                 <Input label="Tarif kilométrique (€/km)" type="number" value={params.tarifKm||""} onChange={v=>up("tarifKm",v)} placeholder="0.603" />
               </div>
               <div style={{ background:"#fff", borderRadius:14, padding:16, border:"1px solid #ECEEF2" }}>
-                <h3 style={{ fontSize:15, fontWeight:700, marginBottom:12 }}>Données</h3>
-                <Btn icon={Save} onClick={()=>{
-                  const data = { params, version: 1 };
-                  const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
-                  const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="remplaidel-backup.json"; a.click();
-                }} style={{ width:"100%", marginBottom:8 }}>Exporter mes données</Btn>
+                <h3 style={{ fontSize:15, fontWeight:700, marginBottom:12, color:"#082B66" }}>Données</h3>
+                <Btn icon={Save} onClick={()=>{ const data = { params, version: 1 }; const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" }); const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="remplaidel-backup.json"; a.click(); }} style={{ width:"100%", marginBottom:8 }}>Exporter mes données</Btn>
                 <p style={{ fontSize:11, color:"#8B95A5", margin:0 }}>Les données sont sauvegardées automatiquement dans votre navigateur.</p>
               </div>
             </div>
@@ -835,7 +686,7 @@
           const [cabinets, setCabinets] = useStore("ri_cabinets", []);
           const [remplacements, setRemplacements] = useStore("ri_remplacements", []);
           const [params, setParams] = useStore("ri_params", { tarifKm:"0.603", tarifJour:"300" });
-          const [formOpen, setFormOpen] = useState(null); // null | { mode:"new"|"edit", data }
+          const [formOpen, setFormOpen] = useState(null);
           const emptyRepl = (date) => ({ date: date||"", start:"", end:"", cabinetId:"", status:"pending", amountPlanned:params.tarifJour||"", amountReceived:"", km:"", notes:"" });
          
           function saveRepl(r) {
@@ -844,69 +695,34 @@
             setFormOpen(null);
           }
           function delRepl(id) { setRemplacements(prev => prev.filter(x => x.id!==id)); setFormOpen(null); }
+          function openForm(date) { setFormOpen({ mode:"new", data:emptyRepl(date) }); }
          
           return (
-            <div style={{
-              fontFamily:"'Inter','Segoe UI',system-ui,sans-serif", background:"#F4F5F8",
-              minHeight:"100vh", maxWidth:500, margin:"0 auto", paddingBottom:80, color:"#1A2332"
-            }}>
-              {/* Header */}
-              <div style={{
-                background:"linear-gradient(135deg, #2D9F93 0%, #238F84 100%)",
-                padding:"20px 20px 24px", borderRadius:"0 0 24px 24px",
-                color:"#fff", marginBottom:20
-              }}>
-                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                  <div style={{ fontSize:24 }}>🩺</div>
-                  <div>
-                    <div style={{ fontSize:20, fontWeight:800, letterSpacing:"-.3px" }}>Rempla'IDEL</div>
-                    <div style={{ fontSize:11, opacity:.8 }}>Gestion des remplacements</div>
-                  </div>
-                </div>
-              </div>
-         
-              {/* Content */}
+            <div style={{ fontFamily:"'Inter','Segoe UI',system-ui,sans-serif", background:"#F4F5F8", minHeight:"100vh", maxWidth:500, margin:"0 auto", paddingBottom:80, color:"#1A2332" }}>
+              
+              {/* Content (Le hero est intégré directement dans le Dashboard pour gérer les marges) */}
               <div style={{ padding:"0 16px" }}>
-                {page==="dash" && <Dashboard remplacements={remplacements} setRemplacements={setRemplacements} cabinets={cabinets} params={params} />}
+                {page==="dash" && <Dashboard remplacements={remplacements} setRemplacements={setRemplacements} cabinets={cabinets} params={params} setPage={setPage} openForm={openForm} />}
                 {page==="cabs" && <Cabinets cabinets={cabinets} setCabinets={setCabinets} />}
-                {page==="plan" && <Planning remplacements={remplacements} setRemplacements={setRemplacements} cabinets={cabinets}
-                  onAdd={(date)=>setFormOpen({ mode:"new", data:emptyRepl(date) })}
-                  onEdit={(r)=>setFormOpen({ mode:"edit", data:r })}
-                />}
+                {page==="plan" && <Planning remplacements={remplacements} setRemplacements={setRemplacements} cabinets={cabinets} onAdd={openForm} onEdit={(r)=>setFormOpen({ mode:"edit", data:r })} />}
                 {page==="fin" && <Finances remplacements={remplacements} cabinets={cabinets} />}
                 {page==="km" && <Kilometres remplacements={remplacements} cabinets={cabinets} params={params} />}
                 {page==="set" && <Parametres params={params} setParams={setParams} />}
               </div>
          
-              {/* Replacement form modal */}
               {formOpen && (
                 <Modal title={formOpen.mode==="edit" ? "Modifier le remplacement" : "Nouveau remplacement"} onClose={()=>setFormOpen(null)}>
-                  <ReplacementForm
-                    replacement={formOpen.data}
-                    cabinets={cabinets}
-                    onSave={saveRepl}
-                    onDelete={formOpen.mode==="edit" ? delRepl : null}
-                    onCancel={()=>setFormOpen(null)}
-                  />
+                  <ReplacementForm replacement={formOpen.data} cabinets={cabinets} onSave={saveRepl} onDelete={formOpen.mode==="edit" ? delRepl : null} onCancel={()=>setFormOpen(null)} />
                 </Modal>
               )}
          
               {/* Bottom Nav */}
-              <div style={{
-                position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)",
-                width:"100%", maxWidth:500, background:"#fff",
-                borderTop:"1px solid #ECEEF2", display:"flex", justifyContent:"space-around",
-                padding:"6px 0 env(safe-area-inset-bottom, 8px)", zIndex:50
-              }}>
+              <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:500, background:"#fff", borderTop:"1px solid #ECEEF2", display:"flex", justifyContent:"space-around", padding:"6px 0 env(safe-area-inset-bottom, 8px)", zIndex:50, boxShadow: '0 -4px 12px rgba(0,0,0,0.03)' }}>
                 {NAV.map(n => {
                   const active = page===n.id;
                   return (
-                    <button key={n.id} onClick={()=>setPage(n.id)} style={{
-                      background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column",
-                      alignItems:"center", gap:2, padding:"4px 8px", borderRadius:10,
-                      transition:"all .15s", color: active ? "#2D9F93" : "#8B95A5"
-                    }}>
-                      <n.icon size={20} />
+                    <button key={n.id} onClick={()=>setPage(n.id)} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:2, padding:"4px 8px", borderRadius:10, transition:"all .15s", color: active ? "#082B66" : "#8B95A5" }}>
+                      <n.icon size={22} />
                       <span style={{ fontSize:10, fontWeight: active ? 700 : 500 }}>{n.label}</span>
                     </button>
                   );
@@ -916,7 +732,6 @@
           );
         }
 
-        // ─── Affichage de l'application ───
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
