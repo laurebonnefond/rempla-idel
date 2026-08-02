@@ -65,9 +65,5 @@ Import/Export de tournées via Excel/CSV.
 Cartographie des patients.
 Rempla'IDEL - Version 1.0 - Powered by IA
 
-Comment l'ajouter sur GitHub :
-Sur ton dépôt GitHub, clique sur "Add file" > "Create new file".
-Nomme le fichier exactement README.md.
-Colle tout le texte ci-dessus dedans.
 Clique sur "Commit changes".
 GitHub va automatiquement formater ce texte en belle page web sur la page d'accueil de ton dépôt !
