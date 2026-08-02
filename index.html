@@ -5,41 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rempla'IDEL</title>
     
-    <!-- Favicon (Icône dans l'onglet du navigateur) -->
     <link rel="icon" type="image/png" href="assets/favicon.png">
     
-    <!-- Polices -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- React et Babel -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
-        body { 
-            margin: 0; 
-            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; 
-            background: #FFFFFF; 
-        }
+        body { margin: 0; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; background: #FFFFFF; }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #D0D4DC; border-radius: 4px; }
         
-        /* Animations Premium */
-        @keyframes fadeInDown {
-            0% { opacity: 0; transform: translateY(-20px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeIn {
-            0% { opacity: 0; }
-            100% { opacity: 1; }
-        }
-        @keyframes slideUp {
-            0% { opacity: 0; transform: translateY(30px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeInDown { 0% { opacity: 0; transform: translateY(-20px); } 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+        @keyframes slideUp { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
         @keyframes slideUpModal { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
@@ -74,6 +57,8 @@
         const FileText = makeIcon("📄");
         const Save = makeIcon("💾");
         const Copy = makeIcon("📋");
+        const User = makeIcon("🧑‍⚕️");
+        const Route = makeIcon("🧭");
 
         // ─── Hooks & Utils ───
         function useStore(key, init) {
@@ -90,6 +75,7 @@
         const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
         const DAYS_FR = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
         const STATUS_MAP = { pending:"En attente", invoiced:"Facturé", paid:"Payé", cancelled:"Annulé" };
+        const DEFAULT_CARE_TYPES = ["Pansement", "Injection", "Perfusion", "Prise de sang", "Surveillance", "Glycémie", "Insuline", "Toilette", "Aide au lever", "Distribution médicaments", "Autre"];
          
         // ─── UI Components ───
         function KpiCard({ icon: Icon, label, value, sub, color, delay }) {
@@ -117,6 +103,7 @@
             gap:6, transition:"all .2s", opacity: disabled ? .5 : 1,
             ...(variant==="primary" ? { background:"#082B66", color:"#fff" } :
               variant==="danger" ? { background:"#FEE", color:"#EF5350" } :
+              variant==="turquoise" ? { background:"#1BC7C9", color:"#fff" } :
               { background:"#F0F1F4", color:"#1A2332" }),
             ...style
           };
@@ -142,13 +129,15 @@
           );
         }
          
-        function Modal({ title, onClose, children }) {
+        function Modal({ title, onClose, children, icon: Icon }) {
           return (
             <div style={{ position:"fixed", inset:0, background:"rgba(8, 43, 102, 0.4)", zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
               onClick={e => { if(e.target === e.currentTarget) onClose(); }}>
               <div style={{ background:"#fff", borderRadius:"20px 20px 0 0", width:"100%", maxWidth:500, maxHeight:"90vh", overflow:"auto", padding:"20px 20px 32px", animation:"slideUpModal .25s ease" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-                  <h3 style={{ margin:0, fontSize:18, fontWeight:700, color:"#082B66" }}>{title}</h3>
+                  <h3 style={{ margin:0, fontSize:18, fontWeight:700, color:"#082B66", display:'flex', alignItems:'center', gap:8 }}>
+                    {Icon && <Icon size={20} color="#1BC7C9" />} {title}
+                  </h3>
                   <button onClick={onClose} style={{ background:"#F0F1F4", border:"none", borderRadius:10, padding:6, cursor:"pointer" }}><X size={18}/></button>
                 </div>
                 {children}
@@ -187,7 +176,7 @@
           );
         }
          
-        // ─── Dashboard Premium (Page d'accueil) ───
+        // ─── Dashboard Premium ───
         function Dashboard({ remplacements, setRemplacements, cabinets, params, setPage, openForm }) {
           const now = new Date();
           const month = now.getMonth(), year = now.getFullYear();
@@ -199,47 +188,28 @@
          
           return (
             <div style={{ paddingBottom: 20 }}>
-              
-              {/* HERO SECTION */}
               <div style={{
                 background: 'linear-gradient(160deg, #082B66 0%, #1BC7C9 120%)',
-                margin: '0 -16px 24px',
-                padding: '40px 24px 30px',
-                borderBottomLeftRadius: '32px',
-                borderBottomRightRadius: '32px',
-                color: 'white',
-                textAlign: 'center',
-                boxShadow: '0 10px 30px rgba(8, 43, 102, 0.2)',
+                margin: '0 -16px 24px', padding: '40px 24px 30px',
+                borderBottomLeftRadius: '32px', borderBottomRightRadius: '32px',
+                color: 'white', textAlign: 'center', boxShadow: '0 10px 30px rgba(8, 43, 102, 0.2)',
                 animation: 'fadeInDown 0.8s ease-out'
               }}>
-                {/* Chemin local du logo */}
-                <img 
-                  src="assets/logo.png" 
-                  alt="Rempla'IDEL Logo" 
-                  style={{ width: '110px', height: 'auto', marginBottom: '16px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))' }}
-                />
+                <img src="assets/logo.png" alt="Rempla'IDEL Logo" style={{ width: '110px', height: 'auto', marginBottom: '16px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))' }} />
                 <h1 style={{ margin:0, fontSize:28, fontWeight:800, letterSpacing: "-0.5px" }}>Rempla'IDEL</h1>
                 <p style={{ margin:"8px 0 0", fontSize:15, fontWeight:500, opacity: 0.95 }}>La gestion intelligente des remplacements infirmiers.</p>
                 <p style={{ margin:"4px 0 0", fontSize:12, opacity: 0.7, fontStyle: 'italic' }}>Gagnez du temps. Suivez vos revenus. Centralisez votre activité.</p>
                 
-                {/* Boutons rapides */}
                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '24px' }}>
-                  <button 
-                    onClick={() => openForm('')} 
-                    style={{ background: 'white', color: '#082B66', border: 'none', padding: '12px 20px', borderRadius: '16px', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: '6px' }}
-                  >
+                  <button onClick={() => openForm('')} style={{ background: 'white', color: '#082B66', border: 'none', padding: '12px 20px', borderRadius: '16px', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Plus size={16} /> Nouveau remplacement
                   </button>
-                  <button 
-                    onClick={() => setPage('plan')} 
-                    style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '12px 20px', borderRadius: '16px', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                  >
+                  <button onClick={() => setPage('plan')} style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '12px 20px', borderRadius: '16px', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <CalendarDays size={16} /> Voir le planning
                   </button>
                 </div>
               </div>
 
-              {/* STATS GRID */}
               <div style={{ marginBottom: 16, padding: '0 4px' }}>
                 <h2 style={{ margin:"0 0 16px", fontSize:18, fontWeight:700, color:"#082B66" }}>Bonjour {params.name?.split(' ')[0] || "👋"}, voici votre activité</h2>
                 <p style={{ margin:"0 0 16px", fontSize:13, color:"#8B95A5" }}>{MONTHS_FR[month]} {year}</p>
@@ -256,7 +226,6 @@
                 </div>
               </div>
 
-              {/* FOOTER */}
               <div style={{ textAlign: 'center', marginTop: '32px', opacity: 0, animation: 'fadeIn 1s ease 1s forwards' }}>
                 <div style={{ fontSize: 12, color: '#8B95A5', marginBottom: 4 }}>Version 1.0</div>
                 <div style={{ fontSize: 12, color: '#1BC7C9', fontWeight: 600 }}>✨ Powered by IA</div>
@@ -300,7 +269,7 @@
               </div>
          
               {viewing && (
-                <Modal title={viewing.name} onClose={()=>setViewing(null)}>
+                <Modal title={viewing.name} onClose={()=>setViewing(null)} icon={Building2}>
                   <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                     {viewing.address && <div style={{ fontSize:14, display:"flex", alignItems:"center", gap:8 }}><MapPin size={14} color="#1BC7C9"/>{viewing.address}</div>}
                     {viewing.phone && <div style={{ fontSize:14, display:"flex", alignItems:"center", gap:8 }}><Phone size={14} color="#1BC7C9"/>{viewing.phone}</div>}
@@ -320,7 +289,7 @@
               )}
          
               {editing && (
-                <Modal title={editing.id ? "Modifier le cabinet" : "Nouveau cabinet"} onClose={()=>setEditing(null)}>
+                <Modal title={editing.id ? "Modifier le cabinet" : "Nouveau cabinet"} onClose={()=>setEditing(null)} icon={Building2}>
                   <CabinetForm cabinet={editing} onSave={save} onCancel={()=>setEditing(null)} />
                 </Modal>
               )}
@@ -372,7 +341,7 @@
         const DAYS_FULL = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
          
         // ─── Planning ───
-        function Planning({ remplacements, setRemplacements, cabinets, onAdd, onEdit }) {
+        function Planning({ remplacements, setRemplacements, cabinets, onAdd, onEdit, onOpenTour }) {
           const [view, setView] = useState("month");
           const [cur, setCur] = useState(new Date());
           const [clipboard, setClipboard] = useState(null);
@@ -407,10 +376,11 @@
          
           const EventChip = ({ ev, compact }) => {
             const cab = cabMap[ev.cabinetId];
+            const hasTour = ev.trackPatients && ev.patients?.length > 0;
             return (
               <div draggable onDragStart={(e) => { setDragId(ev.id); e.dataTransfer.effectAllowed="move"; }} onClick={(e) => { e.stopPropagation(); onEdit(ev); }}
                 style={{ fontSize: compact ? 9 : 12, padding: compact ? "2px 4px" : "4px 8px", borderRadius: compact ? 4 : 8, marginBottom: compact ? 1 : 4, background: cab ? cab.color+"18" : "#F0F1F4", color: cab?.color || "#5A6578", fontWeight:600, cursor:"grab", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", borderLeft: compact ? "none" : `3px solid ${cab?.color||"#8B95A5"}` }}>
-                {ev.start && <span>{ev.start}{ev.end ? `–${ev.end}` : ""} </span>}{cab?.name || "—"}
+                {ev.start && <span>{ev.start}{ev.end ? `–${ev.end}` : ""} </span>}{cab?.name || "—"} {hasTour && "🧑‍⚕️"}
               </div>
             );
           };
@@ -481,10 +451,14 @@
                   ))}
                   {evts.filter(ev => ev.start).map(ev => {
                     const top = timeToY(ev.start) * 44; const height = ev.end ? (timeToY(ev.end) - timeToY(ev.start)) * 44 : 44; const cab = cabMap[ev.cabinetId];
+                    const hasTour = ev.trackPatients && ev.patients?.length > 0;
                     return (
                       <div key={ev.id} draggable onDragStart={() => setDragId(ev.id)} onClick={(e) => { e.stopPropagation(); onEdit(ev); }}
                         style={{ position:"absolute", top, left:44, right:8, height: Math.max(height, 28), background: cab ? cab.color+"20" : "#F0F1F4", borderLeft: `4px solid ${cab?.color||"#8B95A5"}`, borderRadius:8, padding:"4px 8px", cursor:"grab", fontSize:13, fontWeight:600, color: cab?.color || "#5A6578", overflow:"hidden", zIndex:2 }}>
-                        <div>{ev.start}–{ev.end||"?"}</div>
+                        <div style={{display:'flex', justifyContent:'space-between'}}>
+                          <span>{ev.start}–{ev.end||"?"}</span>
+                          {hasTour && <span onClick={(e)=>{e.stopPropagation(); onOpenTour(ev)}} style={{cursor:'pointer', fontSize:16}}>🧑‍⚕️</span>}
+                        </div>
                         <div style={{ fontSize:11, fontWeight:500, opacity:.8 }}>{cab?.name||"—"}</div>
                         {ev.notes && <div style={{ fontSize:10, fontWeight:400, opacity:.6, marginTop:2 }}>{ev.notes}</div>}
                       </div>
@@ -526,13 +500,87 @@
             </div>
           );
         }
+
+        // ─── Tournée (Check-list patients) ───
+        function TourView({ rep, cabinets, setRemplacements, onClose }) {
+          const cab = cabinets.find(c => c.id === rep.cabinetId);
+          const doneCount = rep.patients.filter(p => p.done).length;
+          const total = rep.patients.length;
+          const progress = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+
+          const toggleDone = (patId) => {
+            setRemplacements(prev => prev.map(r => r.id === rep.id ? {
+              ...r,
+              patients: r.patients.map(p => p.id === patId ? {...p, done: !p.done} : p)
+            } : r));
+          };
+
+          return (
+            <Modal title={`Tournée - ${cab?.name || ""}`} onClose={onClose} icon={Route}>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#082B66' }}>Progression</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1BC7C9' }}>{doneCount} / {total} ({progress}%)</span>
+                </div>
+                <div style={{ background: '#F0F1F4', borderRadius: 8, height: 12, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #082B66 0%, #1BC7C9 100%)', transition: 'width .3s' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {rep.patients.sort((a,b) => (a.time||"99:99").localeCompare(b.time||"99:99")).map(p => (
+                  <div key={p.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px',
+                    background: p.done ? '#F8FAFC' : '#fff', borderRadius: 12, border: `1px solid ${p.done ? '#E0E3EA' : '#1BC7C9'}`,
+                    opacity: p.done ? 0.7 : 1, transition: 'all .2s'
+                  }}>
+                    <div onClick={() => toggleDone(p.id)} style={{
+                      width: 24, height: 24, borderRadius: 6, border: `2px solid ${p.done ? '#082B66' : '#1BC7C9'}`,
+                      background: p.done ? '#082B66' : 'transparent', cursor: 'pointer', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', flexShrink: 0
+                    }}>
+                      {p.done && '✓'}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: '#1A2332', textDecoration: p.done ? 'line-through' : 'none' }}>
+                        {p.time && <span style={{ color: '#1BC7C9', marginRight: 8 }}>{p.time}</span>}
+                        {p.initials || 'N/A'}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#5A6578', marginTop: 2 }}>
+                        {p.careType}
+                        {p.notes && <span style={{ marginLeft: 8, fontStyle: 'italic', opacity: 0.7 }}>· {p.notes}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginTop: 20, textAlign: 'center', fontSize: 12, color: '#8B95A5', fontStyle: 'italic' }}>
+                🔒 Données patient anonymisées (initiales uniquement)
+              </div>
+            </Modal>
+          );
+        }
          
-        // ─── Formulaires & Stats (Finances, Km, Params) ───
-        function ReplacementForm({ replacement, cabinets, onSave, onDelete, onCancel }) {
+        // ─── Formulaires & Stats ───
+        function ReplacementForm({ replacement, cabinets, params, onSave, onDelete, onCancel, onOpenTour }) {
           const [r, setR] = useState(replacement);
           const up = (k,v) => setR(p=>({...p,[k]:v}));
           const cabOptions = [{ value:"", label:"— Choisir —" }, ...cabinets.map(c=>({ value:c.id, label:c.name }))];
           const statusOptions = Object.entries(STATUS_MAP).map(([v,l])=>({ value:v, label:l }));
+          const careTypeOptions = (params.careTypes || DEFAULT_CARE_TYPES).map(t => ({ value: t, label: t }));
+
+          const addPatient = () => {
+            const newPat = { id: uid(), initials: "", careType: careTypeOptions[0]?.value || "", time: "", done: false, notes: "" };
+            up("patients", [...(r.patients || []), newPat]);
+          };
+          const updatePatient = (id, key, val) => {
+            up("patients", r.patients.map(p => p.id === id ? {...p, [key]: val} : p));
+          };
+          const removePatient = (id) => {
+            up("patients", r.patients.filter(p => p.id !== id));
+          };
+
           return (
             <div>
               <Input label="Date *" type="date" value={r.date} onChange={v=>up("date",v)} />
@@ -547,7 +595,47 @@
                 <Input label="Montant reçu (€)" type="number" value={r.amountReceived} onChange={v=>up("amountReceived",v)} style={{flex:1}} />
               </div>
               <Input label="Kilomètres" type="number" value={r.km} onChange={v=>up("km",v)} />
-              <Input label="Observations" value={r.notes} onChange={v=>up("notes",v)} textarea />
+              
+              {/* Suivi des patients */}
+              <div style={{ marginBottom: 16, marginTop: 16, padding: 16, background: '#F8FAFC', borderRadius: 12, border: '1px dashed #E0E3EA' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600, color: '#082B66' }}>
+                  <input type="checkbox" checked={r.trackPatients || false} onChange={e=>up("trackPatients", e.target.checked)} style={{width: 18, height: 18, accentColor: '#1BC7C9'}} />
+                  Activer le suivi des patients (tournée)
+                </label>
+              </div>
+
+              {r.trackPatients && (
+                <div style={{ marginBottom: 16 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#082B66' }}>Patients prévus</h3>
+                  {r.patients && r.patients.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {r.patients.map((p, idx) => (
+                        <div key={p.id} style={{ background: '#fff', border: '1px solid #E0E3EA', borderRadius: 10, padding: 12 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: '#8B95A5' }}>Patient {idx + 1}</span>
+                            <button onClick={()=>removePatient(p.id)} style={{ background:'none', border:'none', color:'#EF5350', cursor:'pointer', padding:0 }}><Trash2 size={14} /></button>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                            <Input label="Initiales" value={p.initials} onChange={v=>updatePatient(p.id, "initials", v)} placeholder="AB" style={{flex:1, marginBottom:0}} />
+                            <Input label="Heure" type="time" value={p.time} onChange={v=>updatePatient(p.id, "time", v)} style={{flex:1, marginBottom:0}} />
+                          </div>
+                          <Input label="Type de soin" value={p.careType} onChange={v=>updatePatient(p.id, "careType", v)} options={careTypeOptions} style={{marginBottom: 8}} />
+                          <Input label="Notes (privé)" value={p.notes} onChange={v=>updatePatient(p.id, "notes", v)} textarea placeholder="Notes personnelles..." style={{marginBottom: 0}} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: 13, color: '#8B95A5', textAlign: 'center', padding: 12 }}>Aucun patient ajouté.</p>
+                  )}
+                  <Btn variant="turquoise" icon={Plus} onClick={addPatient} style={{ width: '100%', marginTop: 10 }}>Ajouter un patient</Btn>
+                  {r.patients && r.patients.length > 0 && (
+                    <Btn variant="ghost" icon={Route} onClick={()=>onOpenTour(r)} style={{ width: '100%', marginTop: 8 }}>Voir la check-list tournée</Btn>
+                  )}
+                </div>
+              )}
+
+              <Input label="Observations générales" value={r.notes} onChange={v=>up("notes",v)} textarea />
+              
               <div style={{ display:"flex", gap:10, marginTop:8 }}>
                 <Btn icon={Check} onClick={()=>onSave(r)} disabled={!r.date}>Enregistrer</Btn>
                 {r.id && onDelete && <Btn icon={Trash2} variant="danger" onClick={()=>onDelete(r.id)}>Supprimer</Btn>}
@@ -647,9 +735,22 @@
          
         function Parametres({ params, setParams }) {
           const up = (k,v) => setParams(p=>({...p,[k]:v}));
+          const [newCareType, setNewCareType] = useState("");
+          const careTypes = params.careTypes || DEFAULT_CARE_TYPES;
+
+          const addCareType = () => {
+            if(!newCareType.trim()) return;
+            up("careTypes", [...careTypes, newCareType.trim()]);
+            setNewCareType("");
+          };
+          const removeCareType = (type) => {
+            up("careTypes", careTypes.filter(t => t !== type));
+          };
+
           return (
             <div>
               <h2 style={{ margin:"0 0 16px", fontSize:20, fontWeight:700, color:"#082B66" }}>Paramètres</h2>
+              
               <div style={{ background:"#fff", borderRadius:14, padding:16, marginBottom:16, border:"1px solid #ECEEF2" }}>
                 <h3 style={{ fontSize:15, fontWeight:700, marginBottom:12, color:"#082B66" }}>Identité</h3>
                 <Input label="Nom IDEL" value={params.name||""} onChange={v=>up("name",v)} placeholder="Marie Dupont" />
@@ -661,11 +762,49 @@
                 </div>
                 <Input label="IBAN" value={params.iban||""} onChange={v=>up("iban",v)} />
               </div>
+
               <div style={{ background:"#fff", borderRadius:14, padding:16, marginBottom:16, border:"1px solid #ECEEF2" }}>
                 <h3 style={{ fontSize:15, fontWeight:700, marginBottom:12, color:"#082B66" }}>Tarifs</h3>
                 <Input label="Tarif journalier (€)" type="number" value={params.tarifJour||""} onChange={v=>up("tarifJour",v)} placeholder="300" />
                 <Input label="Tarif kilométrique (€/km)" type="number" value={params.tarifKm||""} onChange={v=>up("tarifKm",v)} placeholder="0.603" />
               </div>
+
+              {/* Nouveaux Paramètres Tournée */}
+              <div style={{ background:"#fff", borderRadius:14, padding:16, marginBottom:16, border:"1px solid #ECEEF2" }}>
+                <h3 style={{ fontSize:15, fontWeight:700, marginBottom:12, color:"#082B66" }}>Tournée & Patients</h3>
+                
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize:12, fontWeight:600, color:"#5A6578", display:"block", marginBottom:6 }}>Types de soins personnalisés</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {careTypes.map(t => (
+                      <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#F0F1F4', borderRadius: 20, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#1A2332' }}>
+                        {t}
+                        <button onClick={()=>removeCareType(t)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF5350', padding: 0, display: 'flex' }}><X size={12} /></button>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Input value={newCareType} onChange={setNewCareType} placeholder="Nouveau soin..." style={{ flex: 1, marginBottom: 0 }} />
+                    <Btn icon={Plus} onClick={addCareType}>Ajouter</Btn>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12, padding: 12, background: '#F8FAFC', borderRadius: 10 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#1A2332' }}>
+                    <input type="checkbox" checked={params.showAddresses || false} onChange={e=>up("showAddresses", e.target.checked)} style={{width: 16, height: 16, accentColor: '#1BC7C9'}} />
+                    Afficher les adresses (si renseignées)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#1A2332' }}>
+                    <input type="checkbox" checked={params.autoSaveTour || true} onChange={e=>up("autoSaveTour", e.target.checked)} style={{width: 16, height: 16, accentColor: '#1BC7C9'}} />
+                    Sauvegarder automatiquement la tournée
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#1A2332' }}>
+                    <input type="checkbox" checked={params.enableAI || false} onChange={e=>up("enableAI", e.target.checked)} style={{width: 16, height: 16, accentColor: '#1BC7C9'}} />
+                    Activer les suggestions IA (bientôt)
+                  </label>
+                </div>
+              </div>
+
               <div style={{ background:"#fff", borderRadius:14, padding:16, border:"1px solid #ECEEF2" }}>
                 <h3 style={{ fontSize:15, fontWeight:700, marginBottom:12, color:"#082B66" }}>Données</h3>
                 <Btn icon={Save} onClick={()=>{ const data = { params, version: 1 }; const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" }); const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="remplaidel-backup.json"; a.click(); }} style={{ width:"100%", marginBottom:8 }}>Exporter mes données</Btn>
@@ -689,9 +828,11 @@
           const [page, setPage] = useState("dash");
           const [cabinets, setCabinets] = useStore("ri_cabinets", []);
           const [remplacements, setRemplacements] = useStore("ri_remplacements", []);
-          const [params, setParams] = useStore("ri_params", { tarifKm:"0.603", tarifJour:"300" });
+          const [params, setParams] = useStore("ri_params", { tarifKm:"0.603", tarifJour:"300", careTypes: DEFAULT_CARE_TYPES });
           const [formOpen, setFormOpen] = useState(null);
-          const emptyRepl = (date) => ({ date: date||"", start:"", end:"", cabinetId:"", status:"pending", amountPlanned:params.tarifJour||"", amountReceived:"", km:"", notes:"" });
+          const [tourOpen, setTourOpen] = useState(null);
+          
+          const emptyRepl = (date) => ({ date: date||"", start:"", end:"", cabinetId:"", status:"pending", amountPlanned:params.tarifJour||"", amountReceived:"", km:"", notes:"", trackPatients: false, patients: [] });
          
           function saveRepl(r) {
             if(r.id) setRemplacements(prev => prev.map(x => x.id===r.id ? r : x));
@@ -704,23 +845,38 @@
           return (
             <div style={{ fontFamily:"'Inter','Segoe UI',system-ui,sans-serif", background:"#F4F5F8", minHeight:"100vh", maxWidth:500, margin:"0 auto", paddingBottom:80, color:"#1A2332" }}>
               
-              {/* Content */}
               <div style={{ padding:"0 16px" }}>
                 {page==="dash" && <Dashboard remplacements={remplacements} setRemplacements={setRemplacements} cabinets={cabinets} params={params} setPage={setPage} openForm={openForm} />}
                 {page==="cabs" && <Cabinets cabinets={cabinets} setCabinets={setCabinets} />}
-                {page==="plan" && <Planning remplacements={remplacements} setRemplacements={setRemplacements} cabinets={cabinets} onAdd={openForm} onEdit={(r)=>setFormOpen({ mode:"edit", data:r })} />}
+                {page==="plan" && <Planning remplacements={remplacements} setRemplacements={setRemplacements} cabinets={cabinets} onAdd={openForm} onEdit={(r)=>setFormOpen({ mode:"edit", data:r })} onOpenTour={(r)=>setTourOpen(r)} />}
                 {page==="fin" && <Finances remplacements={remplacements} cabinets={cabinets} />}
                 {page==="km" && <Kilometres remplacements={remplacements} cabinets={cabinets} params={params} />}
                 {page==="set" && <Parametres params={params} setParams={setParams} />}
               </div>
          
               {formOpen && (
-                <Modal title={formOpen.mode==="edit" ? "Modifier le remplacement" : "Nouveau remplacement"} onClose={()=>setFormOpen(null)}>
-                  <ReplacementForm replacement={formOpen.data} cabinets={cabinets} onSave={saveRepl} onDelete={formOpen.mode==="edit" ? delRepl : null} onCancel={()=>setFormOpen(null)} />
+                <Modal title={formOpen.mode==="edit" ? "Modifier le remplacement" : "Nouveau remplacement"} onClose={()=>setFormOpen(null)} icon={CalendarDays}>
+                  <ReplacementForm 
+                    replacement={formOpen.data} 
+                    cabinets={cabinets} 
+                    params={params}
+                    onSave={saveRepl} 
+                    onDelete={formOpen.mode==="edit" ? delRepl : null} 
+                    onCancel={()=>setFormOpen(null)} 
+                    onOpenTour={(r) => { setFormOpen(null); setTourOpen(r); }}
+                  />
                 </Modal>
               )}
+
+              {tourOpen && (
+                <TourView 
+                  rep={tourOpen} 
+                  cabinets={cabinets} 
+                  setRemplacements={setRemplacements} 
+                  onClose={()=>setTourOpen(null)} 
+                />
+              )}
          
-              {/* Bottom Nav */}
               <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:500, background:"#fff", borderTop:"1px solid #ECEEF2", display:"flex", justifyContent:"space-around", padding:"6px 0 env(safe-area-inset-bottom, 8px)", zIndex:50, boxShadow: '0 -4px 12px rgba(0,0,0,0.03)' }}>
                 {NAV.map(n => {
                   const active = page===n.id;
