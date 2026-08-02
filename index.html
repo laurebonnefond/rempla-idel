@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rempla'IDEL</title>
     
+    <!-- Favicon (Icône dans l'onglet du navigateur) -->
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    
     <!-- Polices -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -209,8 +212,9 @@
                 boxShadow: '0 10px 30px rgba(8, 43, 102, 0.2)',
                 animation: 'fadeInDown 0.8s ease-out'
               }}>
+                {/* Chemin local du logo */}
                 <img 
-                  src="https://z-cdn-media.chatglm.cn/files/ece349d0-467a-44f5-84ab-2ef83912def0.png" 
+                  src="assets/logo.png" 
                   alt="Rempla'IDEL Logo" 
                   style={{ width: '110px', height: 'auto', marginBottom: '16px', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))' }}
                 />
@@ -700,7 +704,7 @@
           return (
             <div style={{ fontFamily:"'Inter','Segoe UI',system-ui,sans-serif", background:"#F4F5F8", minHeight:"100vh", maxWidth:500, margin:"0 auto", paddingBottom:80, color:"#1A2332" }}>
               
-              {/* Content (Le hero est intégré directement dans le Dashboard pour gérer les marges) */}
+              {/* Content */}
               <div style={{ padding:"0 16px" }}>
                 {page==="dash" && <Dashboard remplacements={remplacements} setRemplacements={setRemplacements} cabinets={cabinets} params={params} setPage={setPage} openForm={openForm} />}
                 {page==="cabs" && <Cabinets cabinets={cabinets} setCabinets={setCabinets} />}
