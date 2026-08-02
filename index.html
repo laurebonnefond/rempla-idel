@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rempla'IDEL</title>
     
-    <!-- Polices et Icônes -->
+    <!-- Polices -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     
     <!-- React et Babel pour faire tourner le code sans installation -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -36,9 +35,34 @@
     <script type="text/babel">
         // ─── Adaptation des imports pour le navigateur ───
         const { useState, useEffect, useMemo, useCallback } = React;
-        const { LayoutDashboard, Building2, CalendarDays, Euro, Car, Settings, Plus, X, Check,
-        ChevronLeft, ChevronRight, Edit, Trash2, Clock, MapPin, Phone, Mail, AlertCircle,
-        TrendingUp, FileText, Search, Moon, Sun, Save, ArrowLeft, Copy, Eye } = lucide;
+
+        // ─── Composants Icônes (Emojis) ───
+        // On remplace la bibliothèque externe par des emojis pour éviter les erreurs
+        const makeIcon = (emoji) => ({ size=18, color, style }) => <span style={{ fontSize: size, color, lineHeight: 1, display: 'inline-block', ...style }}>{emoji}</span>;
+        const LayoutDashboard = makeIcon("📊");
+        const Building2 = makeIcon("🏢");
+        const CalendarDays = makeIcon("📅");
+        const Euro = makeIcon("💶");
+        const Car = makeIcon("🚗");
+        const Settings = makeIcon("⚙️");
+        const Plus = makeIcon("➕");
+        const X = makeIcon("❌");
+        const Check = makeIcon("✅");
+        const ChevronLeft = makeIcon("⬅️");
+        const ChevronRight = makeIcon("➡️");
+        const Edit = makeIcon("✏️");
+        const Trash2 = makeIcon("🗑️");
+        const Clock = makeIcon("🕒");
+        const MapPin = makeIcon("📍");
+        const Phone = makeIcon("📞");
+        const Mail = makeIcon("✉️");
+        const AlertCircle = makeIcon("⚠️");
+        const TrendingUp = makeIcon("📈");
+        const FileText = makeIcon("📄");
+        const Search = makeIcon("🔍");
+        const Save = makeIcon("💾");
+        const Copy = makeIcon("📋");
+        const Eye = makeIcon("👁️");
 
         // ─── localStorage hook ───
         function useStore(key, init) {
@@ -60,7 +84,6 @@
         const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
         const DAYS_FR = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
         const STATUS_MAP = { pending:"En attente", invoiced:"Facturé", paid:"Payé", cancelled:"Annulé" };
-        const STATUS_COLORS = { pending:"#E8A838", invoiced:"#6C8EEF", paid:"#2D9F93", cancelled:"#EF5350" };
          
         // ─── Components de base (UI) ───
          
@@ -142,9 +165,8 @@
           
           const cabMap = Object.fromEntries(cabinets.map(c => [c.id, c]));
 
-          // Filtrer les remplacements non payés de plus de 30 jours
           const alerts = remplacements
-            .filter(r => r.status === "pending" || r.status === "invoiced") // En attente ou Facturé
+            .filter(r => r.status === "pending" || r.status === "invoiced")
             .map(r => {
               const repDate = new Date(r.date);
               repDate.setHours(0, 0, 0, 0);
@@ -167,7 +189,7 @@
             <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 10 }}>
               {alerts.map(a => (
                 <div key={a.id} style={{
-                  background: a.days > 45 ? "#FFEBEE" : "#FFF8E1", // Rouge clair si > 45j, Orange sinon
+                  background: a.days > 45 ? "#FFEBEE" : "#FFF8E1",
                   borderLeft: `4px solid ${a.days > 45 ? "#EF5350" : "#E8A838"}`,
                   padding: "12px 14px", borderRadius: 12, display: "flex", 
                   justifyContent: "space-between", alignItems:"center",
@@ -213,7 +235,7 @@
          
           return (
             <div>
-              <div style={{ marginBottom:20 }}>
+              <div style={{ marginBottom: 20 }}>
                 <h2 style={{ margin:0, fontSize:22, fontWeight:800, color:"#1A2332" }}>Bonjour {params.name||"👋"}</h2>
                 <p style={{ margin:"4px 0 0", fontSize:13, color:"#8B95A5" }}>{MONTHS_FR[month]} {year}</p>
               </div>
@@ -884,7 +906,7 @@
                       alignItems:"center", gap:2, padding:"4px 8px", borderRadius:10,
                       transition:"all .15s", color: active ? "#2D9F93" : "#8B95A5"
                     }}>
-                      <n.icon size={20} strokeWidth={active ? 2.5 : 1.8} />
+                      <n.icon size={20} />
                       <span style={{ fontSize:10, fontWeight: active ? 700 : 500 }}>{n.label}</span>
                     </button>
                   );
