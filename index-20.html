@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rempla'IDEL</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#082B66">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #F4F5F8; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #D0D4DC; border-radius: 4px; }
+        @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+        @keyframes slideUp { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUpModal { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes fadeInDown { 0% { opacity: 0; transform: translateY(-20px); } 100% { opacity: 1; transform: translateY(0); } }
+        input, select, textarea { font-family: inherit; }
+        button { font-family: inherit; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+// ─── Constantes ───
+const COLORS = [
+  "#082B66","#1BC7C9","#F0786A","#E8A838","#9B6DD7","#4CAF50","#FF7043","#5C6BC0",
+  "#26A69A","#EF5350","#AB47BC","#42A5F5",
+  "#F8BBD0","#F48FB1","#EC407A","#AD1457","#E91E63",
+  "#CE93D8","#7E57C2","#29B6F6","#26C6DA","#66BB6A",
+  "#FFA726","#FFF176","#90A4AE","#880E4F"
+];
+const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+const DAYS_FR = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+const DAYS_FULL = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
+const DEFAULT_CARE_TYPES = ["Pansement","Injection","Perfusion","Prise de sang","Surveillance","Glycémie","Insuline","Toilette","Aide au lever","Distribution médicaments","Douche","Bas de contention","Éducation thérapeutique","Changement poche","Autre"];
+
+// ─── Helpers ───
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const getMonday = (d) => { const dt = new Date(d); const day = dt.getDay(); dt.setDate(dt.getDate() - ((day+6)%7)); dt.setHours(0,0,0,0); return dt; };
+const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate()+n); return r; };
+const HOURS = Array.from({length:17}, (_,i) => i+5);
+const timeToY = (t) => { if(!t) return 0; const [h,m] = t.split(":").map(Number); return ((h-5) + m/60); };
+
+function useStore(key, init) {
+  const [val, setVal] = useState(() => {
+    try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : init; } catch { return init; }
+  });
+  useEffect(() => { localStorage.setItem(key, JSON.stringify(val)); }, [key, val]);
+  return [val, setVal];
+}
+
+// ─── Export helpers ───
+function exportCSV(rows, filename) {
+  const csv = rows.map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+}
+
+// ─── UI Primitives ───
+function Btn({ children, onClick, variant="primary", style={}, disabled, icon: Icon, full }) {
+  const styles = {
+    primary: { background:"#082B66", color:"#fff" },
+    turquoise: { background:"#1BC7C9", color:"#fff" },
+    danger: { background:"#FEE2E2", color:"#EF5350" },
+    ghost: { background:"#F0F1F4", color:"#1A2332" },
+    outline: { background:"transparent", color:"#082B66", border:"1.5px solid #082B66" }
+  };
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      border:"none", borderRadius:12, padding:"11px 18px", fontWeight:600, fontSize:14,
+      cursor: disabled ? "not-allowed" : "pointer", display:"inline-flex", alignItems:"center",
+      justifyContent:"center", gap:6, transition:"all .15s", opacity: disabled ? .5 : 1,
+      width: full ? "100%" : undefined,
+      ...styles[variant], ...style
+    }}>{Icon && <Icon size={16}/>}{children}</button>
+  );
+}
+
+function Input({ label, value, onChange, type="text", placeholder, style={}, options, textarea, checked, onCheck }) {
+  const shared = { width:"100%", padding:"10px 12px", borderRadius:10, border:"1.5px solid #E0E3EA", fontSize:14, outline:"none", fontFamily:"inherit", background:"#FAFBFC", transition:"border .15s" };
+  return (
+    <div style={{ marginBottom:12, ...style }}>
+      {label && <label style={{ fontSize:12, fontWeight:600, color:"#5A6578", display:"block", marginBottom:4 }}>{label}</label>}
+      {options ? (
+        <select value={value||""} onChange={e=>onChange(e.target.value)} style={{...shared, appearance:"auto"}}>{options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
+      ) : textarea ? (
+        <textarea value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={3} style={{...shared, resize:"vertical"}} />
+      ) : (
+        <input type={type} value={value||""} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={shared} onFocus={e=>{e.target.style.borderColor="#1BC7C9"}} onBlur={e=>{e.target.style.borderColor="#E0E3EA"}} />
+      )}
+    </div>
+  );
+}
+
+function Checkbox({ label, checked, onChange, style={} }) {
+  return (
+    <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', fontSize:13, color:'#1A2332', padding:'6px 0', ...style }}>
+      <input type="checkbox" checked={checked||false} onChange={e=>onChange(e.target.checked)} style={{width:18, height:18, accentColor:'#1BC7C9', flexShrink:0}} />
+      {label}
+    </label>
+  );
+}
+
+function Modal({ title, onClose, children, icon: Icon }) {
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(8,43,102,0.4)", zIndex:100, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
+      onClick={e => { if(e.target === e.currentTarget) onClose(); }}>
+      <div style={{ background:"#fff", borderRadius:"20px 20px 0 0", width:"100%", maxWidth:500, maxHeight:"92vh", overflow:"auto", padding:"20px 20px 32px", animation:"slideUpModal .25s ease" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, position:"sticky", top:-20, background:"#fff", zIndex:2, paddingTop:4, paddingBottom:8 }}>
+          <h3 style={{ margin:0, fontSize:18, fontWeight:700, color:"#082B66", display:'flex', alignItems:'center', gap:8 }}>
+            {Icon && <Icon size={20} color="#1BC7C9" />} {title}
+          </h3>
+          <button onClick={onClose} style={{ background:"#F0F1F4", border:"none", borderRadius:10, padding:8, cursor:"pointer", fontSize:16 }}>✕</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function KpiCard({ icon: Icon, label, value, sub, color, onClick, delay=0 }) {
+  return (
+    <div onClick={onClick} style={{
+      background:"#fff", borderRadius:16, padding:"16px 14px", flex:"1 1 45%",
+      minWidth:140, boxShadow:"0 2px 8px rgba(8,43,102,0.04)", border:"1px solid #F0F2F5",
+      cursor: onClick ? "pointer" : "default", transition:"transform .15s, box-shadow .15s",
+      opacity:0, animation: `slideUp 0.4s ease-out ${delay}s forwards`
+    }} onMouseEnter={e=>{if(onClick){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 4px 16px rgba(8,43,102,0.1)"}}} onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="0 2px 8px rgba(8,43,102,0.04)"}}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+        <span style={{ fontSize:20 }}>{Icon}</span>
+        <span style={{ fontSize:11, color:"#8B95A5", fontWeight:600, textTransform:"uppercase", letterSpacing:0.3 }}>{label}</span>
+      </div>
+      <div style={{ fontSize:22, fontWeight:700, color:"#082B66" }}>{value}</div>
+      {sub && <div style={{ fontSize:11, color:"#8B95A5", marginTop:2 }}>{sub}</div>}
+    </div>
+  );
+}
+
+function Section({ title, children, action }) {
+  return (
+    <div style={{ marginBottom:20 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+        <h3 style={{ margin:0, fontSize:16, fontWeight:700, color:"#082B66" }}>{title}</h3>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD V1.1
+// ═══════════════════════════════════════════════
+function Dashboard({ remplacements, cabinets, params, setPage, openForm }) {
+  const now = new Date();
+  const month = now.getMonth(), year = now.getFullYear();
+  const thisMonth = remplacements.filter(r => {
+    const d = new Date(r.dateStart || r.date);
+    return d.getMonth()===month && d.getFullYear()===year && r.status!=="cancelled";
+  });
+
+  // CA estimé = somme des montants prévus
+  const caEstime = thisMonth.reduce((s,r) => s + (parseFloat(r.amountPlanned)||0), 0);
+  // Revenus estimés = CA - rétrocessions
+  const revenuEstime = thisMonth.reduce((s,r) => {
+    const ca = parseFloat(r.amountPlanned)||0;
+    const cab = cabinets.find(c => c.id === r.cabinetId);
+    const retro = parseFloat(cab?.retroPercent)||0;
+    return s + (ca * (1 - retro/100));
+  }, 0);
+  const totalKm = thisMonth.reduce((s,r) => s + (parseFloat(r.km)||0), 0);
+  const activeCabs = new Set(thisMonth.map(r => r.cabinetId).filter(Boolean)).size;
+  const joursRempla = thisMonth.length;
+
+  // Prochaine tournée
+  const todayStr = fmtDate(now);
+  const upcoming = remplacements
+    .filter(r => (r.dateStart || r.date) >= todayStr && r.status !== "cancelled")
+    .sort((a,b) => (a.dateStart||a.date).localeCompare(b.dateStart||b.date));
+  const next = upcoming[0];
+  const nextCab = next ? cabinets.find(c => c.id === next.cabinetId) : null;
+  const nextLabel = next
+    ? `${new Date(next.dateStart||next.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})} — ${nextCab?.name||'?'}`
+    : "Aucune";
+
+  const userName = params.name?.split(' ')[0] || "";
+
+  return (
+    <div style={{ paddingBottom:20 }}>
+      {/* Hero */}
+      <div style={{
+        background: 'linear-gradient(180deg, #F6FDFF 0%, #E5F9FF 20%, #B9EAF7 45%, #69C9E6 70%, #082B66 100%)',
+        margin: '0 -16px 24px', padding: '8px 16px 20px',
+        borderBottomLeftRadius: 32, borderBottomRightRadius: 32,
+        textAlign: 'center', boxShadow: '0 8px 24px rgba(8,43,102,0.15)',
+        animation: 'fadeInDown 0.6s ease-out'
+      }}>
+        <img src="assets/logo.png" alt="Rempla'IDEL" style={{ width:280, height:'auto', marginBottom:0, filter:'drop-shadow(0 4px 12px rgba(0,0,0,0.15))' }} />
+        <h1 style={{ margin:0, fontSize:24, fontWeight:800, color:"white", letterSpacing:"-0.5px" }}>
+          Bonjour {userName || "👋"}
+        </h1>
+        <p style={{ margin:"6px 0 0", fontSize:14, color:"rgba(255,255,255,0.9)", fontWeight:500 }}>Ton activité du jour</p>
+        <div style={{ display:'flex', gap:8, justifyContent:'center', marginTop:16, flexWrap:'wrap' }}>
+          <Btn onClick={() => openForm('')} style={{ background:'white', color:'#082B66', boxShadow:'0 4px 12px rgba(0,0,0,0.15)' }}>➕ Nouveau remplacement</Btn>
+          <Btn onClick={() => setPage('plan')} style={{ background:'rgba(255,255,255,0.15)', color:'white', border:'1px solid rgba(255,255,255,0.4)' }}>📅 Planning</Btn>
+        </div>
+      </div>
+
+      <div style={{ padding:'0 2px' }}>
+        <h2 style={{ margin:"0 0 4px", fontSize:17, fontWeight:700, color:"#082B66" }}>
+          {MONTHS_FR[month]} {year}
+        </h2>
+        <p style={{ margin:"0 0 14px", fontSize:12, color:"#8B95A5" }}>Résumé de ton mois</p>
+
+        <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
+          <KpiCard icon="💶" label="CA estimé" value={`${caEstime.toFixed(0)} €`} onClick={()=>setPage('fin')} delay={0.05} />
+          <KpiCard icon="💰" label="Revenus estimés" value={`${revenuEstime.toFixed(0)} €`} onClick={()=>setPage('fin')} delay={0.1} />
+          <KpiCard icon="🚗" label="Kilomètres" value={`${totalKm.toFixed(0)} km`} onClick={()=>setPage('km')} delay={0.15} />
+          <KpiCard icon="🏥" label="Cabinets actifs" value={activeCabs} onClick={()=>setPage('cabs')} delay={0.2} />
+          <KpiCard icon="📅" label="Jours de rempla" value={joursRempla} onClick={()=>setPage('plan')} delay={0.25} />
+          <KpiCard icon="🧑‍⚕️" label="Prochaine tournée" value={nextLabel} onClick={()=>setPage('plan')} delay={0.3} />
+        </div>
+      </div>
+
+      <div style={{ textAlign:'center', marginTop:28, fontSize:11, color:'#B0B8C4' }}>
+        Version 1.1 · ✨ Powered by IA
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// CABINETS V1.1
+// ═══════════════════════════════════════════════
+function Cabinets({ cabinets, setCabinets, remplacements, setPage }) {
+  const [editing, setEditing] = useState(null);
+  const [viewing, setViewing] = useState(null);
+  const empty = {
+    name:"", color:COLORS[1], address:"", phone:"", email:"", notes:"",
+    contratStatus:"none", contratDateSignature:"", contratDatePrevue:"", contratNotes:"",
+    cps:false, cpsRecuperee:false, cpsRendue:false, cpsNotes:"",
+    accesType:"none", cleRecuperee:false, cleRendue:false, code:"", accesNotes:"",
+    retroPercent:"", software:"", hours:""
+  };
+  function save(c) {
+    if(!c.name.trim()) return;
+    if(c.id) setCabinets(prev => prev.map(x => x.id===c.id ? c : x));
+    else setCabinets(prev => [...prev, { ...c, id:uid() }]);
+    setEditing(null);
+  }
+  function del(id) { setCabinets(prev => prev.filter(x => x.id!==id)); setViewing(null); }
+
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+        <h2 style={{ margin:0, fontSize:20, fontWeight:700, color:"#082B66" }}>Cabinets</h2>
+        <Btn onClick={()=>setEditing({...empty})}>➕ Ajouter</Btn>
+      </div>
+      {cabinets.length===0 && <p style={{ color:"#8B95A5", textAlign:"center", padding:32 }}>Aucun cabinet. Commencez par en créer un !</p>}
+      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+        {cabinets.map(c => {
+          const statusIcon = c.contratStatus==="signed" ? "✅" : c.contratStatus==="pending" ? "⏳" : "";
+          return (
+            <div key={c.id} onClick={()=>setViewing(c)} style={{ background:"#fff", borderRadius:14, padding:"14px 16px", cursor:"pointer", borderLeft:`4px solid ${c.color}`, display:"flex", alignItems:"center", gap:12, boxShadow:"0 2px 6px rgba(0,0,0,0.03)" }}>
+              <div style={{ width:36, height:36, borderRadius:10, background:c.color+"20", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🏥</div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontWeight:600, fontSize:15, color:"#1A2332", display:'flex', gap:6, alignItems:'center' }}>
+                  <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{c.name}</span>
+                  {statusIcon && <span style={{fontSize:12}}>{statusIcon}</span>}
+                </div>
+                {c.address && <div style={{ fontSize:11, color:"#8B95A5", marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>📍 {c.address}</div>}
+                {c.retroPercent && <div style={{ fontSize:11, color:"#1BC7C9", marginTop:1 }}>Rétro : {c.retroPercent}%</div>}
+              </div>
+              <span style={{color:"#C0C5D0", fontSize:16}}>›</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {viewing && (
+        <Modal title={viewing.name} onClose={()=>setViewing(null)}>
+          <CabinetDetail cab={viewing} onEdit={()=>{setViewing(null);setEditing(viewing)}} onDelete={()=>del(viewing.id)} />
+        </Modal>
+      )}
+      {editing && (
+        <Modal title={editing.id ? "Modifier" : "Nouveau cabinet"} onClose={()=>setEditing(null)}>
+          <CabinetForm cabinet={editing} onSave={save} onCancel={()=>setEditing(null)} />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function CabinetDetail({ cab, onEdit, onDelete }) {
+  const Row = ({icon, label, value}) => value ? <div style={{fontSize:14, display:'flex', gap:8, alignItems:'flex-start', padding:'4px 0'}}><span>{icon}</span><div><span style={{fontWeight:600, color:'#5A6578', fontSize:12}}>{label}</span><br/>{value}</div></div> : null;
+  const contratLabel = cab.contratStatus==="signed" ? "✅ Signé" : cab.contratStatus==="pending" ? "⏳ En attente" : "❌ Aucun";
+
+  return (
+    <div>
+      <div style={{display:'flex', flexDirection:'column', gap:4, marginBottom:16}}>
+        <Row icon="📍" label="Adresse" value={cab.address} />
+        <Row icon="📞" label="Téléphone" value={cab.phone} />
+        <Row icon="✉️" label="Email" value={cab.email} />
+        <Row icon="💻" label="Logiciel" value={cab.software} />
+        <Row icon="🕐" label="Horaires" value={cab.hours} />
+        {cab.retroPercent && <Row icon="💶" label="Rétrocession" value={`${cab.retroPercent} %`} />}
+      </div>
+
+      <div style={{background:'#F8FAFC', borderRadius:12, padding:14, marginBottom:12}}>
+        <div style={{fontWeight:700, fontSize:13, color:'#082B66', marginBottom:8}}>📋 Contrat</div>
+        <div style={{fontSize:13}}>{contratLabel}</div>
+        {cab.contratDateSignature && <div style={{fontSize:12, color:'#8B95A5'}}>Signé le : {new Date(cab.contratDateSignature).toLocaleDateString('fr-FR')}</div>}
+        {cab.contratDatePrevue && <div style={{fontSize:12, color:'#8B95A5'}}>Prévu le : {new Date(cab.contratDatePrevue).toLocaleDateString('fr-FR')}</div>}
+        {cab.contratNotes && <div style={{fontSize:12, color:'#5A6578', marginTop:4}}>{cab.contratNotes}</div>}
+      </div>
+
+      <div style={{background:'#F8FAFC', borderRadius:12, padding:14, marginBottom:12}}>
+        <div style={{fontWeight:700, fontSize:13, color:'#082B66', marginBottom:8}}>💳 Carte CPS</div>
+        {cab.cps ? (
+          <div style={{fontSize:13}}>
+            <span>Récupérée : {cab.cpsRecuperee ? "✅" : "❌"}</span>
+            <span style={{marginLeft:16}}>Rendue : {cab.cpsRendue ? "✅" : "❌"}</span>
+          </div>
+        ) : <div style={{fontSize:13, color:'#8B95A5'}}>Non concerné</div>}
+      </div>
+
+      <div style={{background:'#F8FAFC', borderRadius:12, padding:14, marginBottom:12}}>
+        <div style={{fontWeight:700, fontSize:13, color:'#082B66', marginBottom:8}}>🔑 Accès</div>
+        {cab.accesType==="cle" ? (
+          <div style={{fontSize:13}}>
+            Clé — Récupérée : {cab.cleRecuperee ? "✅" : "❌"} · Rendue : {cab.cleRendue ? "✅" : "❌"}
+          </div>
+        ) : cab.accesType==="code" ? (
+          <div style={{fontSize:13}}>Code : {cab.code || "—"}</div>
+        ) : <div style={{fontSize:13, color:'#8B95A5'}}>Non renseigné</div>}
+        {cab.accesNotes && <div style={{fontSize:12, color:'#5A6578', marginTop:4}}>{cab.accesNotes}</div>}
+      </div>
+
+      {cab.notes && <div style={{padding:12, background:'#F7F8FA', borderRadius:10, fontSize:13, marginBottom:16}}>{cab.notes}</div>}
+
+      <div style={{display:'flex', gap:10}}>
+        <Btn onClick={onEdit}>✏️ Modifier</Btn>
+        <Btn variant="danger" onClick={onDelete}>🗑️ Supprimer</Btn>
+      </div>
+    </div>
+  );
+}
+
+function CabinetForm({ cabinet, onSave, onCancel }) {
+  const [c, setC] = useState(cabinet);
+  const up = (k,v) => setC(p=>({...p,[k]:v}));
+  return (
+    <div>
+      <Input label="Nom du cabinet *" value={c.name} onChange={v=>up("name",v)} placeholder="Cabinet Martin" />
+
+      <div style={{ marginBottom:14 }}>
+        <label style={{ fontSize:12, fontWeight:600, color:"#5A6578", display:"block", marginBottom:6 }}>Couleur</label>
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+          {COLORS.map(col => (
+            <div key={col} onClick={()=>up("color",col)} style={{ width:26, height:26, borderRadius:7, background:col, cursor:"pointer", border: c.color===col ? "3px solid #1A2332" : "2px solid transparent", transition:"border .15s" }} />
+          ))}
+        </div>
+      </div>
+
+      <Input label="Adresse" value={c.address} onChange={v=>up("address",v)} placeholder="12 rue de la Santé, 87000 Limoges" />
+      <div style={{ display:"flex", gap:10 }}>
+        <Input label="Téléphone" value={c.phone} onChange={v=>up("phone",v)} type="tel" style={{flex:1}} />
+        <Input label="Email" value={c.email} onChange={v=>up("email",v)} type="email" style={{flex:1}} />
+      </div>
+      <Input label="Logiciel métier" value={c.software} onChange={v=>up("software",v)} placeholder="Visiodent, Agathe..." />
+      <Input label="Horaires habituels" value={c.hours} onChange={v=>up("hours",v)} placeholder="6h30–13h / 16h–19h" />
+      <Input label="Rétrocession (%)" type="number" value={c.retroPercent} onChange={v=>up("retroPercent",v)} placeholder="0" />
+
+      {/* CONTRAT */}
+      <div style={{background:'#F8FAFC', borderRadius:12, padding:14, marginBottom:14}}>
+        <div style={{fontWeight:700, fontSize:13, color:'#082B66', marginBottom:8}}>📋 Contrat</div>
+        <Input label="Statut" value={c.contratStatus} onChange={v=>up("contratStatus",v)} options={[
+          {value:"none",label:"Aucun"},{value:"pending",label:"En attente"},{value:"signed",label:"Signé"}
+        ]} />
+        {c.contratStatus==="signed" && <Input label="Date de signature" type="date" value={c.contratDateSignature} onChange={v=>up("contratDateSignature",v)} />}
+        {c.contratStatus==="pending" && <Input label="Date prévue" type="date" value={c.contratDatePrevue} onChange={v=>up("contratDatePrevue",v)} />}
+        <Input label="Commentaires contrat" value={c.contratNotes} onChange={v=>up("contratNotes",v)} textarea placeholder="Notes sur le contrat..." />
+      </div>
+
+      {/* CARTE CPS */}
+      <div style={{background:'#F8FAFC', borderRadius:12, padding:14, marginBottom:14}}>
+        <div style={{fontWeight:700, fontSize:13, color:'#082B66', marginBottom:8}}>💳 Carte CPS</div>
+        <Checkbox label="Cabinet fonctionne avec carte CPS" checked={c.cps} onChange={v=>up("cps",v)} />
+        {c.cps && <>
+          <Checkbox label="Carte récupérée" checked={c.cpsRecuperee} onChange={v=>up("cpsRecuperee",v)} />
+          <Checkbox label="Carte rendue" checked={c.cpsRendue} onChange={v=>up("cpsRendue",v)} />
+          <Input label="Commentaires CPS" value={c.cpsNotes} onChange={v=>up("cpsNotes",v)} textarea />
+        </>}
+      </div>
+
+      {/* ACCES */}
+      <div style={{background:'#F8FAFC', borderRadius:12, padding:14, marginBottom:14}}>
+        <div style={{fontWeight:700, fontSize:13, color:'#082B66', marginBottom:8}}>🔑 Accès</div>
+        <Input label="Type d'accès" value={c.accesType} onChange={v=>up("accesType",v)} options={[
+          {value:"none",label:"Aucun"},{value:"cle",label:"Clé"},{value:"code",label:"Code"}
+        ]} />
+        {c.accesType==="cle" && <>
+          <Checkbox label="Clé récupérée" checked={c.cleRecuperee} onChange={v=>up("cleRecuperee",v)} />
+          <Checkbox label="Clé rendue" checked={c.cleRendue} onChange={v=>up("cleRendue",v)} />
+        </>}
+        {c.accesType==="code" && <Input label="Code" value={c.code} onChange={v=>up("code",v)} placeholder="1234A" />}
+        <Input label="Commentaires accès" value={c.accesNotes} onChange={v=>up("accesNotes",v)} textarea />
+      </div>
+
+      <Input label="Remarques générales" value={c.notes} onChange={v=>up("notes",v)} textarea />
+      <div style={{ display:"flex", gap:10, marginTop:8 }}>
+        <Btn onClick={()=>onSave(c)} disabled={!c.name?.trim()}>✅ Enregistrer</Btn>
+        <Btn variant="ghost" onClick={onCancel}>Annuler</Btn>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// PLANNING V1.1 — texte tronqué, noms courts
+// ═══════════════════════════════════════════════
+function Planning({ remplacements, setRemplacements, cabinets, onAdd, onEdit, onOpenTour }) {
+  const [view, setView] = useState("month");
+  const [cur, setCur] = useState(new Date());
+  const today = new Date();
+  const cabMap = useMemo(() => Object.fromEntries(cabinets.map(c=>[c.id,c])), [cabinets]);
+
+  const nav = (dir) => {
+    if(view==="month") setCur(new Date(cur.getFullYear(), cur.getMonth()+dir, 1));
+    else if(view==="week") setCur(addDays(cur, dir*7));
+    else setCur(addDays(cur, dir));
+  };
+  const navLabel = () => {
+    if(view==="month") return `${MONTHS_FR[cur.getMonth()]} ${cur.getFullYear()}`;
+    if(view==="week") { const m = getMonday(cur); return `${m.getDate()}–${addDays(m,6).getDate()} ${MONTHS_FR[m.getMonth()]}`; }
+    return `${DAYS_FULL[(cur.getDay()+6)%7]} ${cur.getDate()} ${MONTHS_FR[cur.getMonth()]}`;
+  };
+
+  const eventsForDate = useCallback((dateStr) => {
+    return remplacements.filter(r => {
+      if(r.status === "cancelled") return false;
+      const start = r.dateStart || r.date;
+      const end = r.dateEnd || r.date || start;
+      return dateStr >= start && dateStr <= end;
+    });
+  }, [remplacements]);
+
+  // Nom tronqué pour le planning (initiales si trop long en vue mois)
+  const shortName = (name, compact) => {
+    if(!name) return "—";
+    if(!compact) return name.length > 18 ? name.slice(0,16)+"…" : name;
+    // Vue mois : initiales si > 6 chars
+    if(name.length <= 6) return name;
+    return name.split(/\s+/).map(w=>w[0]).join('').toUpperCase();
+  };
+
+  const EventChip = ({ ev, compact }) => {
+    const cab = cabMap[ev.cabinetId];
+    return (
+      <div onClick={(e) => { e.stopPropagation(); onEdit(ev); }}
+        style={{
+          fontSize: compact ? 9 : 12, padding: compact ? "1px 3px" : "3px 6px",
+          borderRadius: compact ? 4 : 6, marginBottom: compact ? 1 : 3,
+          background: cab ? cab.color+"18" : "#F0F1F4",
+          color: cab?.color || "#5A6578", fontWeight:600, cursor:"pointer",
+          whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis",
+          borderLeft: compact ? "none" : `3px solid ${cab?.color||"#8B95A5"}`,
+          lineHeight: compact ? "14px" : "18px", maxWidth:"100%"
+        }}>
+        {compact ? shortName(cab?.name, true) : (
+          <>{ev.start && <span style={{opacity:.7}}>{ev.start} </span>}{shortName(cab?.name, false)}</>
+        )}
+      </div>
+    );
+  };
+
+  const MonthView = () => {
+    const month = cur.getMonth(), year = cur.getFullYear();
+    const startDay = (new Date(year, month, 1).getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const cells = [];
+    for(let i=0; i<startDay; i++) cells.push(null);
+    for(let d=1; d<=daysInMonth; d++) cells.push(d);
+    return (
+      <>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:2, marginBottom:4 }}>
+          {DAYS_FR.map(d => <div key={d} style={{ textAlign:"center", fontSize:10, fontWeight:600, color:"#8B95A5", padding:2 }}>{d}</div>)}
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:3 }}>
+          {cells.map((day, i) => {
+            if(!day) return <div key={`e${i}`} />;
+            const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+            const isToday = dateStr === fmtDate(today);
+            const evts = eventsForDate(dateStr);
+            return (
+              <div key={day} onClick={() => { if(evts.length>=1) { setCur(new Date(dateStr)); setView("day"); } else onAdd(dateStr); }}
+                style={{ minHeight:50, borderRadius:8, padding:3, cursor:"pointer", overflow:'hidden',
+                  background: isToday ? "#E0F7FA" : "#fff",
+                  border: isToday ? "2px solid #1BC7C9" : "1px solid #ECEEF2" }}>
+                <div style={{ fontSize:11, fontWeight: isToday ? 700 : 500, color: isToday ? "#082B66" : "#1A2332", textAlign:"right", marginBottom:1 }}>{day}</div>
+                {evts.slice(0,2).map(ev => <EventChip key={ev.id+dateStr} ev={ev} compact />)}
+                {evts.length > 2 && <div style={{ fontSize:8, color:"#8B95A5", textAlign:'center' }}>+{evts.length-2}</div>}
+              </div>
+            );
+          })}
+        </div>
+      </>
+    );
+  };
+
+  const WeekView = () => {
+    const mon = getMonday(cur);
+    const days = Array.from({length:7}, (_,i) => addDays(mon, i));
+    return (
+      <div style={{ display:"flex", gap:3, overflowX:"auto", paddingBottom:8 }}>
+        {days.map((d, i) => {
+          const dateStr = fmtDate(d); const isToday = dateStr === fmtDate(today);
+          const evts = eventsForDate(dateStr);
+          return (
+            <div key={i} style={{ flex:"1 0 0", minWidth:56, background: isToday ? "#E0F7FA" : "#fff", borderRadius:10, border: isToday ? "2px solid #1BC7C9" : "1px solid #ECEEF2", padding:5, minHeight:200 }}>
+              <div style={{ textAlign:"center", marginBottom:6 }}>
+                <div style={{ fontSize:10, fontWeight:600, color:"#8B95A5" }}>{DAYS_FR[i]}</div>
+                <div style={{ fontSize:14, fontWeight:700, color: isToday ? "#fff" : "#1A2332", background: isToday ? "#082B66" : "transparent", borderRadius:20, width:26, height:26, lineHeight:"26px", margin:"2px auto" }}>{d.getDate()}</div>
+              </div>
+              {evts.sort((a,b)=>(a.start||"").localeCompare(b.start||"")).map(ev => <EventChip key={ev.id+dateStr} ev={ev} compact={false} />)}
+              <div onClick={()=>onAdd(dateStr)} style={{ textAlign:"center", padding:4, cursor:"pointer", color:"#1BC7C9", fontSize:18, borderRadius:6 }}>+</div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const DayView = () => {
+    const dateStr = fmtDate(cur);
+    const evts = eventsForDate(dateStr).sort((a,b)=>(a.start||"").localeCompare(b.start||""));
+    return (
+      <div style={{ background:"#fff", borderRadius:14, border:"1px solid #ECEEF2", overflow:"hidden" }}>
+        <div style={{ position:"relative", minHeight: HOURS.length * 44 }}>
+          {HOURS.map(h => (
+            <div key={h} onClick={()=>onAdd(dateStr)} style={{ height:44, borderBottom:"1px solid #F5F6F8", display:"flex", alignItems:"flex-start", padding:"2px 8px", cursor:"pointer" }}>
+              <span style={{ fontSize:11, color:"#8B95A5", fontWeight:500, minWidth:36 }}>{String(h).padStart(2,"0")}:00</span>
+            </div>
+          ))}
+          {evts.filter(ev=>ev.start).map(ev => {
+            const top = timeToY(ev.start)*44;
+            const height = ev.end ? (timeToY(ev.end)-timeToY(ev.start))*44 : 44;
+            const cab = cabMap[ev.cabinetId];
+            return (
+              <div key={ev.id} onClick={(e)=>{e.stopPropagation();onEdit(ev)}}
+                style={{ position:"absolute", top, left:44, right:8, height:Math.max(height,28), background:cab?cab.color+"20":"#F0F1F4", borderLeft:`4px solid ${cab?.color||"#8B95A5"}`, borderRadius:8, padding:"4px 8px", cursor:"pointer", fontSize:13, fontWeight:600, color:cab?.color||"#5A6578", overflow:"hidden", zIndex:2 }}>
+                <div>{ev.start}–{ev.end||"?"} <span style={{fontWeight:500}}>{cab?.name||"—"}</span></div>
+                {ev.notes && <div style={{fontSize:10,opacity:.6,marginTop:1}}>{ev.notes}</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <div style={{ display:"flex", background:"#ECEEF2", borderRadius:10, padding:2, marginBottom:10, gap:2 }}>
+        {[["month","Mois"],["week","Semaine"],["day","Jour"]].map(([v,l]) => (
+          <button key={v} onClick={()=>setView(v)} style={{ flex:1, padding:"7px 0", borderRadius:8, border:"none", fontSize:13, fontWeight:600, cursor:"pointer", background: view===v ? "#fff" : "transparent", color: view===v ? "#082B66" : "#8B95A5", boxShadow: view===v ? "0 1px 3px rgba(0,0,0,.06)" : "none" }}>{l}</button>
+        ))}
+      </div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+        <button onClick={()=>nav(-1)} style={{ background:"none", border:"none", cursor:"pointer", padding:6, color:"#082B66", fontSize:18 }}>◂</button>
+        <h2 style={{ margin:0, fontSize:15, fontWeight:700, textAlign:"center", flex:1, color:"#082B66" }}>{navLabel()}</h2>
+        <button onClick={()=>nav(1)} style={{ background:"none", border:"none", cursor:"pointer", padding:6, color:"#082B66", fontSize:18 }}>▸</button>
+      </div>
+      <div style={{ marginBottom:10 }}>
+        <Btn variant="ghost" onClick={()=>setCur(new Date())} style={{ fontSize:12, padding:"6px 12px" }}>Aujourd'hui</Btn>
+      </div>
+      {view==="month" && <MonthView />}
+      {view==="week" && <WeekView />}
+      {view==="day" && <DayView />}
+      <Btn full onClick={()=>onAdd(view==="day"?fmtDate(cur):"")} style={{ marginTop:14 }}>➕ Nouveau remplacement</Btn>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// FORMULAIRE REMPLACEMENT V1.1 — multi-jours + 3 créneaux
+// ═══════════════════════════════════════════════
+function ReplacementForm({ replacement, cabinets, params, onSave, onDelete, onCancel }) {
+  const [r, setR] = useState(replacement);
+  const up = (k,v) => setR(p=>({...p,[k]:v}));
+  const cabOptions = [{ value:"", label:"— Choisir —" }, ...cabinets.map(c=>({ value:c.id, label:c.name }))];
+  const statusOptions = [{value:"pending",label:"En attente"},{value:"invoiced",label:"Facturé"},{value:"paid",label:"Payé"},{value:"cancelled",label:"Annulé"}];
+  const careTypeOptions = (params.careTypes || DEFAULT_CARE_TYPES).map(t => ({ value: t, label: t }));
+
+  const addPatient = () => {
+    up("patients", [...(r.patients || []), { id:uid(), initials:"", careType:careTypeOptions[0]?.value||"", time:"", slot:"matin", done:false, notes:"" }]);
+  };
+  const updatePatient = (id, key, val) => up("patients", r.patients.map(p => p.id===id ? {...p,[key]:val} : p));
+  const removePatient = (id) => up("patients", r.patients.filter(p => p.id!==id));
+
+  return (
+    <div>
+      <div style={{ display:"flex", gap:10 }}>
+        <Input label="Date début *" type="date" value={r.dateStart||r.date} onChange={v=>{up("dateStart",v); if(!r.dateEnd) up("dateEnd",v);}} style={{flex:1}} />
+        <Input label="Date fin" type="date" value={r.dateEnd||r.date} onChange={v=>up("dateEnd",v)} style={{flex:1}} />
+      </div>
+
+      <div style={{background:'#F8FAFC', borderRadius:12, padding:12, marginBottom:14}}>
+        <div style={{fontWeight:600, fontSize:13, color:'#082B66', marginBottom:8}}>🌅 Matin</div>
+        <div style={{display:'flex', gap:8}}>
+          <Input label="Début" type="time" value={r.startMatin} onChange={v=>up("startMatin",v)} style={{flex:1}} />
+          <Input label="Fin" type="time" value={r.endMatin} onChange={v=>up("endMatin",v)} style={{flex:1}} />
+        </div>
+      </div>
+      <div style={{background:'#F8FAFC', borderRadius:12, padding:12, marginBottom:14}}>
+        <div style={{fontWeight:600, fontSize:13, color:'#082B66', marginBottom:8}}>☀️ Midi <span style={{fontSize:11, color:'#8B95A5'}}>(optionnel)</span></div>
+        <div style={{display:'flex', gap:8}}>
+          <Input label="Début" type="time" value={r.startMidi} onChange={v=>up("startMidi",v)} style={{flex:1}} />
+          <Input label="Fin" type="time" value={r.endMidi} onChange={v=>up("endMidi",v)} style={{flex:1}} />
+        </div>
+      </div>
+      <div style={{background:'#F8FAFC', borderRadius:12, padding:12, marginBottom:14}}>
+        <div style={{fontWeight:600, fontSize:13, color:'#082B66', marginBottom:8}}>🌙 Soir</div>
+        <div style={{display:'flex', gap:8}}>
+          <Input label="Début" type="time" value={r.startSoir} onChange={v=>up("startSoir",v)} style={{flex:1}} />
+          <Input label="Fin" type="time" value={r.endSoir} onChange={v=>up("endSoir",v)} style={{flex:1}} />
+        </div>
+      </div>
+
+      {/* Compat ancien format : garder start/end pour le planning */}
+      {(() => { if(!r.start && r.startMatin) { r.start = r.startMatin; r.end = r.endSoir || r.endMatin; } return null; })()}
+
+      <Input label="Cabinet" value={r.cabinetId} onChange={v=>up("cabinetId",v)} options={cabOptions} />
+      <Input label="Statut" value={r.status} onChange={v=>up("status",v)} options={statusOptions} />
+      <div style={{display:'flex', gap:10}}>
+        <Input label="CA prévu (€)" type="number" value={r.amountPlanned} onChange={v=>up("amountPlanned",v)} style={{flex:1}} />
+        <Input label="CA reçu (€)" type="number" value={r.amountReceived} onChange={v=>up("amountReceived",v)} style={{flex:1}} />
+      </div>
+      <Input label="Kilomètres" type="number" value={r.km} onChange={v=>up("km",v)} />
+
+      {/* PATIENTS / TOURNÉE */}
+      <div style={{ marginBottom:16, padding:14, background:'#F8FAFC', borderRadius:12, border:'1px dashed #E0E3EA' }}>
+        <Checkbox label="Activer le suivi patients (tournée)" checked={r.trackPatients} onChange={v=>up("trackPatients",v)} style={{fontWeight:600, color:'#082B66'}} />
+      </div>
+      {r.trackPatients && (
+        <div style={{marginBottom:16}}>
+          <h3 style={{fontSize:15, fontWeight:700, marginBottom:10, color:'#082B66'}}>Patients prévus</h3>
+          {r.patients?.map((p,idx) => (
+            <div key={p.id} style={{background:'#fff', border:'1px solid #E0E3EA', borderRadius:10, padding:10, marginBottom:8}}>
+              <div style={{display:'flex', justifyContent:'space-between', marginBottom:6}}>
+                <span style={{fontSize:12, fontWeight:600, color:'#8B95A5'}}>Patient {idx+1}</span>
+                <button onClick={()=>removePatient(p.id)} style={{background:'none', border:'none', color:'#EF5350', cursor:'pointer', fontSize:12}}>🗑️</button>
+              </div>
+              <div style={{display:'flex', gap:6, marginBottom:6}}>
+                <Input label="Initiales" value={p.initials} onChange={v=>updatePatient(p.id,"initials",v)} placeholder="AB" style={{flex:1, marginBottom:0}} />
+                <Input label="Heure" type="time" value={p.time} onChange={v=>updatePatient(p.id,"time",v)} style={{flex:1, marginBottom:0}} />
+                <Input label="Créneau" value={p.slot} onChange={v=>updatePatient(p.id,"slot",v)} options={[{value:"matin",label:"Matin"},{value:"midi",label:"Midi"},{value:"soir",label:"Soir"}]} style={{flex:1, marginBottom:0}} />
+              </div>
+              <Input label="Type de soin" value={p.careType} onChange={v=>updatePatient(p.id,"careType",v)} options={careTypeOptions} style={{marginBottom:6}} />
+              <Input label="Notes" value={p.notes} onChange={v=>updatePatient(p.id,"notes",v)} textarea style={{marginBottom:0}} />
+            </div>
+          ))}
+          <Btn variant="turquoise" full onClick={addPatient} style={{marginTop:6}}>➕ Ajouter un patient</Btn>
+        </div>
+      )}
+
+      <Input label="Observations générales" value={r.notes} onChange={v=>up("notes",v)} textarea />
+      <div style={{ display:"flex", gap:10, marginTop:8 }}>
+        <Btn onClick={()=>{
+          // Sync ancien format pour planning
+          const out = {...r};
+          if(!out.date) out.date = out.dateStart;
+          if(!out.start && out.startMatin) out.start = out.startMatin;
+          if(!out.end) out.end = out.endSoir || out.endMatin || out.endMidi;
+          onSave(out);
+        }} disabled={!(r.dateStart||r.date)}>✅ Enregistrer</Btn>
+        {r.id && onDelete && <Btn variant="danger" onClick={()=>onDelete(r.id)}>🗑️</Btn>}
+        <Btn variant="ghost" onClick={onCancel}>Annuler</Btn>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// FINANCES V1.1 — rétrocession, jauge
+// ═══════════════════════════════════════════════
+function Finances({ remplacements, cabinets }) {
+  const cabMap = Object.fromEntries(cabinets.map(c=>[c.id,c]));
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+  const years = [...new Set(remplacements.map(r => new Date(r.dateStart||r.date).getFullYear()))].sort().reverse();
+  if(years.length===0) years.push(filterYear);
+
+  const filtered = remplacements.filter(r => {
+    const d = new Date(r.dateStart||r.date);
+    return d.getFullYear()===filterYear && r.status!=="cancelled";
+  });
+
+  const totalCA = filtered.reduce((s,r) => s+(parseFloat(r.amountPlanned)||0), 0);
+  const totalRecu = filtered.reduce((s,r) => s+(parseFloat(r.amountReceived)||0), 0);
+  const totalRetro = filtered.reduce((s,r) => {
+    const ca = parseFloat(r.amountPlanned)||0;
+    const cab = cabMap[r.cabinetId];
+    const p = parseFloat(cab?.retroPercent)||0;
+    return s + ca*p/100;
+  }, 0);
+  const revenuEstime = totalCA - totalRetro;
+
+  // Par cabinet
+  const byCab = {};
+  filtered.forEach(r => {
+    const cab = cabMap[r.cabinetId];
+    const name = cab?.name || "Sans cabinet";
+    if(!byCab[name]) byCab[name] = {planned:0, received:0, retro:0, count:0, color:cab?.color||"#8B95A5", retroP:parseFloat(cab?.retroPercent)||0};
+    byCab[name].planned += parseFloat(r.amountPlanned)||0;
+    byCab[name].received += parseFloat(r.amountReceived)||0;
+    byCab[name].retro += (parseFloat(r.amountPlanned)||0) * (parseFloat(cab?.retroPercent)||0) / 100;
+    byCab[name].count++;
+  });
+
+  const RetroGauge = ({percent}) => {
+    const color = percent <= 5 ? "#4CAF50" : percent <= 8 ? "#E8A838" : "#EF5350";
+    const label = percent <= 5 ? "Faible" : percent <= 8 ? "Moyenne" : "Élevée";
+    return (
+      <div style={{display:'flex', alignItems:'center', gap:8}}>
+        <div style={{flex:1, background:'#F0F1F4', borderRadius:6, height:10, overflow:'hidden'}}>
+          <div style={{height:'100%', width:`${Math.min(percent*5,100)}%`, background:color, borderRadius:6, transition:'width .3s'}} />
+        </div>
+        <span style={{fontSize:12, fontWeight:600, color}}>{percent.toFixed(1)}% — {label}</span>
+      </div>
+    );
+  };
+
+  const handleExport = () => {
+    const rows = [["Cabinet","Jours","CA estimé","CA reçu","Rétro %","Rétro €","Revenu estimé"]];
+    Object.entries(byCab).forEach(([name,v]) => {
+      rows.push([name, v.count, v.planned.toFixed(2), v.received.toFixed(2), v.retroP, v.retro.toFixed(2), (v.planned-v.retro).toFixed(2)]);
+    });
+    rows.push(["TOTAL","",totalCA.toFixed(2),totalRecu.toFixed(2),"",totalRetro.toFixed(2),revenuEstime.toFixed(2)]);
+    exportCSV(rows, `finances_${filterYear}.csv`);
+  };
+
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
+        <h2 style={{margin:0, fontSize:20, fontWeight:700, color:"#082B66"}}>Finances</h2>
+        <div style={{display:'flex', gap:6}}>
+          <select value={filterYear} onChange={e=>setFilterYear(parseInt(e.target.value))} style={{padding:'6px 10px', borderRadius:8, border:'1px solid #E0E3EA', fontSize:13, fontWeight:600}}>
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <Btn variant="ghost" onClick={handleExport} style={{fontSize:12, padding:'6px 10px'}}>📥 CSV</Btn>
+        </div>
+      </div>
+
+      <div style={{display:"flex", flexWrap:"wrap", gap:10, marginBottom:16}}>
+        <KpiCard icon="📈" label="CA estimé" value={`${totalCA.toFixed(0)} €`} delay={0.05} />
+        <KpiCard icon="💶" label="CA reçu" value={`${totalRecu.toFixed(0)} €`} delay={0.1} />
+        <KpiCard icon="💰" label="Revenu estimé" value={`${revenuEstime.toFixed(0)} €`} sub={`Rétro : ${totalRetro.toFixed(0)} €`} delay={0.15} />
+        <KpiCard icon="⏳" label="Reste dû" value={`${(totalCA-totalRecu).toFixed(0)} €`} delay={0.2} />
+      </div>
+
+      {totalCA > 0 && (
+        <div style={{background:'#fff', borderRadius:12, padding:14, marginBottom:16, border:'1px solid #ECEEF2'}}>
+          <div style={{fontSize:13, fontWeight:600, color:'#082B66', marginBottom:8}}>Rétrocession globale</div>
+          <RetroGauge percent={totalCA > 0 ? totalRetro/totalCA*100 : 0} />
+        </div>
+      )}
+
+      <Section title="Par cabinet">
+        {Object.entries(byCab).map(([name,v]) => (
+          <div key={name} style={{background:'#fff', borderRadius:10, padding:'12px 14px', marginBottom:8, border:'1px solid #ECEEF2'}}>
+            <div style={{display:'flex', justifyContent:'space-between', marginBottom:4}}>
+              <span style={{fontWeight:600, fontSize:14, color:'#1A2332'}}>{name} ({v.count}j)</span>
+              <span style={{fontWeight:700, color:'#082B66'}}>{v.planned.toFixed(0)} €</span>
+            </div>
+            <div style={{display:'flex', justifyContent:'space-between', fontSize:12, color:'#8B95A5'}}>
+              <span>Reçu : {v.received.toFixed(0)} €</span>
+              <span>Rétro : {v.retro.toFixed(0)} € ({v.retroP}%)</span>
+            </div>
+            <RetroGauge percent={v.retroP} />
+          </div>
+        ))}
+        {Object.keys(byCab).length===0 && <p style={{color:"#8B95A5", fontSize:13}}>Aucune donnée</p>}
+      </Section>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// KILOMÉTRAGE V1.1
+// ═══════════════════════════════════════════════
+function Kilometres({ remplacements, cabinets, params }) {
+  const cabMap = Object.fromEntries(cabinets.map(c=>[c.id,c]));
+  const year = new Date().getFullYear();
+  const yearData = remplacements.filter(r => new Date(r.dateStart||r.date).getFullYear()===year && r.status!=="cancelled");
+  const totalKm = yearData.reduce((s,r) => s+(parseFloat(r.km)||0), 0);
+  const byCab = {};
+  yearData.forEach(r => {
+    const name = cabMap[r.cabinetId]?.name || "Sans cabinet";
+    if(!byCab[name]) byCab[name] = {km:0, count:0};
+    byCab[name].km += parseFloat(r.km)||0;
+    byCab[name].count++;
+  });
+  const byMonth = {};
+  yearData.forEach(r => {
+    const m = new Date(r.dateStart||r.date).getMonth();
+    byMonth[m] = (byMonth[m]||0) + (parseFloat(r.km)||0);
+  });
+
+  const handleExport = () => {
+    const rows = [["Mois","Kilomètres"]];
+    for(let m=0; m<12; m++) rows.push([MONTHS_FR[m], (byMonth[m]||0).toFixed(0)]);
+    rows.push(["TOTAL", totalKm.toFixed(0)]);
+    rows.push([]);
+    rows.push(["Cabinet","Kilomètres","Jours"]);
+    Object.entries(byCab).forEach(([n,v])=>rows.push([n, v.km.toFixed(0), v.count]));
+    exportCSV(rows, `kilometres_${year}.csv`);
+  };
+
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
+        <h2 style={{margin:0, fontSize:20, fontWeight:700, color:"#082B66"}}>Kilométrage {year}</h2>
+        <Btn variant="ghost" onClick={handleExport} style={{fontSize:12, padding:'6px 10px'}}>📥 CSV</Btn>
+      </div>
+      <div style={{display:"flex", flexWrap:"wrap", gap:10, marginBottom:20}}>
+        <KpiCard icon="🚗" label="Total km" value={`${totalKm.toFixed(0)} km`} delay={0.05} />
+        <KpiCard icon="📊" label="Moy./jour" value={`${yearData.length>0 ? (totalKm/yearData.length).toFixed(0) : 0} km`} delay={0.1} />
+      </div>
+
+      <Section title="Par cabinet">
+        {Object.entries(byCab).sort((a,b)=>b[1].km-a[1].km).map(([name,v]) => (
+          <div key={name} style={{display:'flex', justifyContent:'space-between', padding:'10px 14px', background:'#fff', borderRadius:10, marginBottom:6, border:'1px solid #ECEEF2'}}>
+            <span style={{fontWeight:600, fontSize:14, color:'#1A2332'}}>{name}</span>
+            <div style={{textAlign:'right'}}>
+              <span style={{fontWeight:700, fontSize:14, color:'#082B66'}}>{v.km.toFixed(0)} km</span>
+              <div style={{fontSize:11, color:'#8B95A5'}}>{v.count} jours</div>
+            </div>
+          </div>
+        ))}
+      </Section>
+
+      <Section title="Par mois">
+        {Array.from({length:12},(_,m)=>m).filter(m=>byMonth[m]).map(m => (
+          <div key={m} style={{display:'flex', justifyContent:'space-between', padding:'8px 14px', background:'#fff', borderRadius:8, marginBottom:4, border:'1px solid #F0F2F5'}}>
+            <span style={{fontSize:13, color:'#1A2332'}}>{MONTHS_FR[m]}</span>
+            <span style={{fontWeight:700, fontSize:13, color:'#082B66'}}>{(byMonth[m]||0).toFixed(0)} km</span>
+          </div>
+        ))}
+      </Section>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// LISTING SOINS V1.1 (nouveau module)
+// ═══════════════════════════════════════════════
+function ListingSoins({ remplacements, cabinets }) {
+  const cabMap = Object.fromEntries(cabinets.map(c=>[c.id,c]));
+  // Rassembler tous les patients de tous les remplacements qui ont trackPatients
+  const allEntries = remplacements
+    .filter(r => r.trackPatients && r.patients?.length > 0 && r.status !== "cancelled")
+    .sort((a,b) => (b.dateStart||b.date||"").localeCompare(a.dateStart||a.date||""))
+    .slice(0, 20);
+
+  const handleExport = () => {
+    const rows = [["Date","Cabinet","Patient","Matin","Midi","Soir","Notes"]];
+    allEntries.forEach(r => {
+      const cab = cabMap[r.cabinetId]?.name||"?";
+      const date = new Date(r.dateStart||r.date).toLocaleDateString('fr-FR');
+      const bySlot = {matin:[], midi:[], soir:[]};
+      (r.patients||[]).forEach(p => { bySlot[p.slot||"matin"].push(`${p.initials}: ${p.careType}`); });
+      rows.push([date, cab, r.patients.length, bySlot.matin.join(' / '), bySlot.midi.join(' / '), bySlot.soir.join(' / '), r.notes||""]);
+    });
+    exportCSV(rows, `listing_soins.csv`);
+  };
+
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
+        <h2 style={{margin:0, fontSize:20, fontWeight:700, color:"#082B66"}}>Listing des soins</h2>
+        <Btn variant="ghost" onClick={handleExport} style={{fontSize:12, padding:'6px 10px'}}>📥 CSV</Btn>
+      </div>
+
+      {allEntries.length===0 && <p style={{color:"#8B95A5", textAlign:"center", padding:32}}>Aucun soin enregistré.<br/>Activez le suivi patients dans vos remplacements.</p>}
+
+      {allEntries.map(r => {
+        const cab = cabMap[r.cabinetId];
+        const date = new Date(r.dateStart||r.date).toLocaleDateString('fr-FR', {weekday:'short', day:'numeric', month:'short'});
+        const slots = {matin:[], midi:[], soir:[]};
+        (r.patients||[]).forEach(p => slots[p.slot||"matin"].push(p));
+
+        return (
+          <div key={r.id} style={{background:'#fff', borderRadius:12, padding:14, marginBottom:10, border:'1px solid #ECEEF2'}}>
+            <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
+              <span style={{fontWeight:700, fontSize:14, color:'#082B66'}}>{date}</span>
+              <span style={{fontSize:12, color:cab?.color||'#8B95A5', fontWeight:600}}>{cab?.name||"?"}</span>
+            </div>
+            <div style={{overflowX:'auto'}}>
+              <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+                <thead>
+                  <tr style={{background:'#F8FAFC'}}>
+                    <th style={{padding:'6px 8px', textAlign:'left', fontWeight:600, color:'#5A6578', borderBottom:'1px solid #E0E3EA'}}>Patient</th>
+                    <th style={{padding:'6px 8px', textAlign:'left', fontWeight:600, color:'#5A6578', borderBottom:'1px solid #E0E3EA'}}>Matin</th>
+                    <th style={{padding:'6px 8px', textAlign:'left', fontWeight:600, color:'#5A6578', borderBottom:'1px solid #E0E3EA'}}>Midi</th>
+                    <th style={{padding:'6px 8px', textAlign:'left', fontWeight:600, color:'#5A6578', borderBottom:'1px solid #E0E3EA'}}>Soir</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(r.patients||[]).sort((a,b)=>(a.time||"99").localeCompare(b.time||"99")).map(p => (
+                    <tr key={p.id}>
+                      <td style={{padding:'5px 8px', fontWeight:600, borderBottom:'1px solid #F5F6F8'}}>{p.initials||"?"}</td>
+                      <td style={{padding:'5px 8px', borderBottom:'1px solid #F5F6F8', color:'#5A6578'}}>{p.slot==="matin" ? p.careType : ""}</td>
+                      <td style={{padding:'5px 8px', borderBottom:'1px solid #F5F6F8', color:'#5A6578'}}>{p.slot==="midi" ? p.careType : ""}</td>
+                      <td style={{padding:'5px 8px', borderBottom:'1px solid #F5F6F8', color:'#5A6578'}}>{p.slot==="soir" ? p.careType : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// PARAMÈTRES V1.1
+// ═══════════════════════════════════════════════
+function Parametres({ params, setParams }) {
+  const up = (k,v) => setParams(p=>({...p,[k]:v}));
+  const [newCareType, setNewCareType] = useState("");
+  const careTypes = params.careTypes || DEFAULT_CARE_TYPES;
+  const addCareType = () => { if(!newCareType.trim()) return; up("careTypes",[...careTypes,newCareType.trim()]); setNewCareType(""); };
+  const removeCareType = (t) => up("careTypes", careTypes.filter(x=>x!==t));
+
+  return (
+    <div>
+      <h2 style={{margin:"0 0 16px", fontSize:20, fontWeight:700, color:"#082B66"}}>Réglages</h2>
+      <div style={{background:'#fff', borderRadius:14, padding:16, marginBottom:14, border:'1px solid #ECEEF2'}}>
+        <h3 style={{fontSize:15, fontWeight:700, marginBottom:10, color:'#082B66'}}>Identité</h3>
+        <Input label="Nom IDEL" value={params.name} onChange={v=>up("name",v)} placeholder="Adeline Kotreba" />
+        <Input label="Téléphone" value={params.phone} onChange={v=>up("phone",v)} type="tel" />
+        <Input label="Email" value={params.email} onChange={v=>up("email",v)} type="email" />
+      </div>
+      <div style={{background:'#fff', borderRadius:14, padding:16, marginBottom:14, border:'1px solid #ECEEF2'}}>
+        <h3 style={{fontSize:15, fontWeight:700, marginBottom:10, color:'#082B66'}}>Tarifs</h3>
+        <Input label="Tarif journalier (€)" type="number" value={params.tarifJour} onChange={v=>up("tarifJour",v)} placeholder="300" />
+      </div>
+      <div style={{background:'#fff', borderRadius:14, padding:16, marginBottom:14, border:'1px solid #ECEEF2'}}>
+        <h3 style={{fontSize:15, fontWeight:700, marginBottom:10, color:'#082B66'}}>Types de soins</h3>
+        <div style={{display:'flex', flexWrap:'wrap', gap:6, marginBottom:10}}>
+          {careTypes.map(t => (
+            <div key={t} style={{display:'flex', alignItems:'center', gap:4, background:'#F0F1F4', borderRadius:20, padding:'4px 10px', fontSize:12, fontWeight:600}}>
+              {t}
+              <button onClick={()=>removeCareType(t)} style={{background:'none', border:'none', cursor:'pointer', color:'#EF5350', padding:0, fontSize:10}}>✕</button>
+            </div>
+          ))}
+        </div>
+        <div style={{display:'flex', gap:8}}>
+          <Input value={newCareType} onChange={setNewCareType} placeholder="Nouveau soin..." style={{flex:1, marginBottom:0}} />
+          <Btn onClick={addCareType}>➕</Btn>
+        </div>
+      </div>
+      <div style={{background:'#fff', borderRadius:14, padding:16, border:'1px solid #ECEEF2'}}>
+        <h3 style={{fontSize:15, fontWeight:700, marginBottom:10, color:'#082B66'}}>Données</h3>
+        <Btn full onClick={()=>{
+          const data = JSON.stringify({params, version:"1.1"}, null, 2);
+          const blob = new Blob([data], {type:"application/json"});
+          const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="remplaidel-backup.json"; a.click();
+        }} style={{marginBottom:8}}>💾 Exporter mes données</Btn>
+        <p style={{fontSize:11, color:'#8B95A5', margin:0}}>Données sauvegardées dans votre navigateur (localStorage).</p>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════
+// APP PRINCIPAL V1.1
+// ═══════════════════════════════════════════════
+const NAV = [
+  { id:"dash", icon:"📊", label:"Accueil" },
+  { id:"plan", icon:"📅", label:"Planning" },
+  { id:"cabs", icon:"🏥", label:"Cabinets" },
+  { id:"fin",  icon:"💶", label:"Finances" },
+  { id:"km",   icon:"🚗", label:"Km" },
+  { id:"soins",icon:"🧑‍⚕️", label:"Soins" },
+  { id:"set",  icon:"⚙️", label:"Réglages" },
+];
+
+function App() {
+  const [page, setPage] = useState("dash");
+  const [cabinets, setCabinets] = useStore("ri_cabinets", []);
+  const [remplacements, setRemplacements] = useStore("ri_remplacements", []);
+  const [params, setParams] = useStore("ri_params", { tarifJour:"300", careTypes: DEFAULT_CARE_TYPES });
+  const [formOpen, setFormOpen] = useState(null);
+
+  const emptyRepl = (date) => ({
+    dateStart: date||"", dateEnd: date||"",
+    startMatin:"", endMatin:"", startMidi:"", endMidi:"", startSoir:"", endSoir:"",
+    start:"", end:"", date: date||"",
+    cabinetId:"", status:"pending", amountPlanned:params.tarifJour||"", amountReceived:"",
+    km:"", notes:"", trackPatients:false, patients:[]
+  });
+
+  function saveRepl(r) {
+    if(r.id) setRemplacements(prev => prev.map(x => x.id===r.id ? r : x));
+    else setRemplacements(prev => [...prev, { ...r, id:uid() }]);
+    setFormOpen(null);
+  }
+  function delRepl(id) { setRemplacements(prev => prev.filter(x => x.id!==id)); setFormOpen(null); }
+  function openForm(date) { setFormOpen({ mode:"new", data:emptyRepl(date) }); }
+
+  return (
+    <div style={{ background:"#F4F5F8", minHeight:"100vh", maxWidth:500, margin:"0 auto", paddingBottom:72, color:"#1A2332" }}>
+      <div style={{ padding:"0 16px" }}>
+        {page==="dash" && <Dashboard remplacements={remplacements} cabinets={cabinets} params={params} setPage={setPage} openForm={openForm} />}
+        {page==="cabs" && <Cabinets cabinets={cabinets} setCabinets={setCabinets} remplacements={remplacements} setPage={setPage} />}
+        {page==="plan" && <Planning remplacements={remplacements} setRemplacements={setRemplacements} cabinets={cabinets} onAdd={openForm} onEdit={(r)=>setFormOpen({mode:"edit",data:r})} />}
+        {page==="fin" && <Finances remplacements={remplacements} cabinets={cabinets} />}
+        {page==="km" && <Kilometres remplacements={remplacements} cabinets={cabinets} params={params} />}
+        {page==="soins" && <ListingSoins remplacements={remplacements} cabinets={cabinets} />}
+        {page==="set" && <Parametres params={params} setParams={setParams} />}
+      </div>
+
+      {formOpen && (
+        <Modal title={formOpen.mode==="edit" ? "Modifier" : "Nouveau remplacement"} onClose={()=>setFormOpen(null)}>
+          <ReplacementForm
+            replacement={formOpen.data}
+            cabinets={cabinets}
+            params={params}
+            onSave={saveRepl}
+            onDelete={formOpen.mode==="edit" ? delRepl : null}
+            onCancel={()=>setFormOpen(null)}
+          />
+        </Modal>
+      )}
+
+      {/* BARRE NAV */}
+      <div style={{
+        position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)",
+        width:"100%", maxWidth:500, background:"#fff",
+        borderTop:"1px solid #ECEEF2", display:"flex", justifyContent:"space-around",
+        padding:"4px 0 env(safe-area-inset-bottom, 6px)", zIndex:50,
+        boxShadow:'0 -2px 8px rgba(0,0,0,0.03)'
+      }}>
+        {NAV.map(n => {
+          const active = page===n.id;
+          return (
+            <button key={n.id} onClick={()=>setPage(n.id)} style={{
+              background:"none", border:"none", cursor:"pointer",
+              display:"flex", flexDirection:"column", alignItems:"center", gap:1,
+              padding:"4px 6px", borderRadius:8, color: active ? "#082B66" : "#8B95A5",
+              transition:"color .15s"
+            }}>
+              <span style={{ fontSize:20 }}>{n.icon}</span>
+              <span style={{ fontSize:9, fontWeight: active ? 700 : 500 }}>{n.label}</span>
+              {active && <div style={{width:4, height:4, borderRadius:2, background:'#1BC7C9', marginTop:1}} />}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
