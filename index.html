@@ -722,7 +722,7 @@ function ReplacementForm({ replacement, cabinets, params, onSave, onDelete, onCa
                 <button onClick={()=>removePatient(p.id)} style={{background:'none', border:'none', color:'#EF5350', cursor:'pointer', fontSize:12}}>🗑️</button>
               </div>
               <div style={{display:'flex', gap:6, marginBottom:6}}>
-                <Input label="Identifiants" value={p.identifiants} onChange={v=>updatePatient(p.id,"identifiants",v)} placeholder="AB" style={{flex:1, marginBottom:0}} />
+                <Input label="Identifiants" value={p.identifiants} onChange={v=>updatePatient(p.id,"identifiants",v)} placeholder="Id" style={{flex:1, marginBottom:0}} />
                 <Input label="Heure" type="time" value={p.time} onChange={v=>updatePatient(p.id,"time",v)} style={{flex:1, marginBottom:0}} />
                 <Input label="Créneau" value={p.slot} onChange={v=>updatePatient(p.id,"slot",v)} options={[{value:"matin",label:"Matin"},{value:"soir",label:"Soir"}]} style={{flex:1, marginBottom:0}} />
               </div>
