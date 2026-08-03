@@ -393,7 +393,7 @@ function CabinetDetail({ cab, onEdit, onDelete }) {
         <div style={{fontWeight:700, fontSize:13, color:'#082B66', marginBottom:8}}>💳 Carte CPS</div>
         {cab.cps ? (
           <div style={{fontSize:13}}>
-              <span>A transmettre : {cab.cpsA transmettre ? "✅" : "❌"}</span>
+            <span>A transmettre : {cab.cpsAtransmettre ? "✅" : "❌"}</span>
             <span>Récupérée : {cab.cpsRecuperee ? "✅" : "❌"}</span>
             <span style={{marginLeft:16}}>Rendue : {cab.cpsRendue ? "✅" : "❌"}</span>
           </div>
@@ -463,7 +463,7 @@ function CabinetForm({ cabinet, onSave, onCancel }) {
         <div style={{fontWeight:700, fontSize:13, color:'#082B66', marginBottom:8}}>💳 Carte CPS</div>
         <Checkbox label="Cabinet fonctionne avec carte CPS" checked={c.cps} onChange={v=>up("cps",v)} />
         {c.cps && <>
-             <Checkbox label="Carte à transmettre" checked={c.cpsA transmettre} onChange={v=>up("cpsA transmettre",v)} />
+          <Checkbox label="Carte à transmettre" checked={c.cpsAtransmettre} onChange={v=>up("cpsAtransmettre",v)} />
           <Checkbox label="Carte récupérée" checked={c.cpsRecuperee} onChange={v=>up("cpsRecuperee",v)} />
           <Checkbox label="Carte rendue" checked={c.cpsRendue} onChange={v=>up("cpsRendue",v)} />
           <Input label="Commentaires CPS" value={c.cpsNotes} onChange={v=>up("cpsNotes",v)} textarea />
