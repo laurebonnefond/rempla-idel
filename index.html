@@ -122,7 +122,7 @@ function getAnonLabel(patient, index, mode, cabName) {
   switch(mode) {
     case "number": return `Patient ${index+1}`;
     case "cabinet": return `${(cabName||"Cab").replace(/\s/g,'').slice(0,8)}${index+1}`;
-    case "initials": default: return patient.initials || `P${index+1}`;
+    case "initials": default: return patient.identifiants || `P${index+1}`;
   }
 }
 function exportCSV(rows, filename) {
