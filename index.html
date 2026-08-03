@@ -670,7 +670,7 @@ function ReplacementForm({ replacement, cabinets, params, onSave, onDelete, onCa
   const careTypeOptions = (params.careTypes || DEFAULT_CARE_TYPES).map(t => ({ value: t, label: t }));
 
   const addPatient = () => {
-    up("patients", [...(r.patients || []), { id:uid(), initials:"", careType:careTypeOptions[0]?.value||"", time:"", slot:"matin", done:false, notes:"" }]);
+    up("patients", [...(r.patients || []), { id:uid(), identifiants:"", careType:careTypeOptions[0]?.value||"", time:"", slot:"matin", done:false, notes:"" }]);
   };
   const updatePatient = (id, key, val) => up("patients", r.patients.map(p => p.id===id ? {...p,[key]:val} : p));
   const removePatient = (id) => up("patients", r.patients.filter(p => p.id!==id));
